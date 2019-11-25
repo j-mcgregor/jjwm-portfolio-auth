@@ -4,15 +4,17 @@
   "description": "The API for this portfolio",
   "main": "src/index.js",
   "scripts": {
+    "build": "babel src -d dist --source-maps",
+    "lint": "esw . --color",
+    "lint:fix": "esw . --color --fix",
+    "lint:watch": "npm run lint -- --watch",
+    "seed": "nodemon ./seed/index.js --exec babel-node --presets @babel/preset-env",
+    "serve": "node dist/index.js",
     "start": "nodemon src/index.js --exec babel-node --presets @babel/preset-env",
     "test": "cross-env NODE_ENV=test TZ=utc jest",
     "test:cover": "npm run test -- --coverage ",
     "test:report": "npm run test --reporters=\"jest-mocha-reporter\" ",
-    "test:watch": "jest --watchAll",
-    "seed": "nodemon ./seed/index.js --exec babel-node --presets @babel/preset-env",
-    "lint": "esw . --color",
-    "lint:fix": "esw . --color --fix",
-    "lint:watch": "npm run lint -- --watch"
+    "test:watch": "jest --watchAll"
   },
   "author": "Jack McGregor",
   "license": "ISC",
@@ -29,11 +31,14 @@
     "eslint": "^6.7.1",
     "eslint-plugin-babel": "^5.3.0",
     "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jest": "^23.0.4",
+    "eslint-plugin-node": "^10.0.0",
     "eslint-watch": "^6.0.1",
     "express": "^4.17.1",
     "express-session": "^1.17.0",
     "graphql": "^14.5.8",
     "helmet": "^3.21.2",
+    "jest-cli": "^24.9.0",
     "jest-mocha-reporter": "^1.0.1",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.7.12",
@@ -41,7 +46,8 @@
     "node-fetch": "^2.6.0",
     "passport": "^0.4.0",
     "passport-jwt": "^4.0.0",
-    "passport-local": "^1.0.0"
+    "passport-local": "^1.0.0",
+    "prettier": "^1.19.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.7.4",
@@ -54,5 +60,35 @@
     "faker": "^4.1.0",
     "jest": "^24.9.0",
     "nodemon": "^2.0.1"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": true
+          }
+        }
+      ]
+    ]
+  },
+  "engines": {
+    "node": ">=8"
+  },
+  "eslintConfig": {
+    "plugins": [
+      "node",
+      "jest"
+    ],
+    "env": {
+      "jest/globals": true,
+      "node": true,
+      "es6": true
+    },
+    "parserOptions": {
+      "sourceType": "module",
+      "ecmaVersion": 2018
+    }
   }
 }

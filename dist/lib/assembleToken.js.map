@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/lib/assembleToken.js"],"names":["cookies","COOKIE_1","COOKIE_2"],"mappings":";;;;;;;eAAgBA,OAAD,IAAa;AAC1B,SAAQ,GAAEA,OAAO,CAACC,QAAS,IAAGD,OAAO,CAACE,QAAS,EAA/C;AACD,C","sourcesContent":["export default (cookies) => {\n  return `${cookies.COOKIE_1}.${cookies.COOKIE_2}`;\n};\n"],"file":"assembleToken.js"}
