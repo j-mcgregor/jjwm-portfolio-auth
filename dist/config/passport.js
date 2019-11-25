@@ -9,7 +9,7 @@ var _passportJwt = require("passport-jwt");
 
 var _index = _interopRequireDefault(require("./index"));
 
-var _User = _interopRequireDefault(require("../src/models/User"));
+var _User = _interopRequireDefault(require("../models/User"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 

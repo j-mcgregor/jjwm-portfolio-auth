@@ -1,0 +1,19 @@
+version: '2'
+services:
+  web:
+    build: .
+    ports:
+      - '4000:4000'
+    links:
+      - mongo
+    env_file:
+      - .env
+  mongo:
+    image: mongo
+    volumes:
+      - data-volume:/data/db
+    ports:
+      - '27017:27017'
+      - '45028:45028'
+volumes:
+  data-volume:

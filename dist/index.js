@@ -18,9 +18,9 @@ var _cookieParser = _interopRequireDefault(require("cookie-parser"));
 
 var _expressSession = _interopRequireDefault(require("express-session"));
 
-var _config = _interopRequireDefault(require("../config"));
+var _config = _interopRequireDefault(require("./config"));
 
-var _passport2 = _interopRequireDefault(require("../config/passport"));
+var _passport2 = _interopRequireDefault(require("./config/passport"));
 
 var _auth = _interopRequireDefault(require("./routes/api/auth"));
 

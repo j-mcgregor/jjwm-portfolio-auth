@@ -1,13 +1,13 @@
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import config from './index';
-import User from '../src/models/User';
+import User from '../models/User';
 
 const opts = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: config.secret
 };
 
-export default (passport) => {
+export default passport => {
   passport.use(
     new Strategy(opts, (jwt_payload, done) => {
       User.findOne({ email: jwt_payload.email }, (err, user) => {

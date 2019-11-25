@@ -5,6 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "build": "babel src -d dist --source-maps",
+    "eslint": "eslint src/**/*.js --ignore-pattern \"node_modules/\"",
     "lint": "esw . --color",
     "lint:fix": "esw . --color --fix",
     "lint:watch": "npm run lint -- --watch",
@@ -77,18 +78,32 @@
     "node": ">=8"
   },
   "eslintConfig": {
-    "plugins": [
-      "node",
-      "jest"
+    "root": true,
+    "extends": [
+      "eslint:recommended",
+      "plugin:import/errors",
+      "plugin:import/warnings",
+      "plugin:react/recommended"
     ],
-    "env": {
-      "jest/globals": true,
-      "node": true,
-      "es6": true
-    },
+    "plugins": [
+      "react"
+    ],
+    "parser": "babel-eslint",
     "parserOptions": {
+      "ecmaVersion": 6,
       "sourceType": "module",
-      "ecmaVersion": 2018
-    }
+      "ecmaFeatures": {
+        "jsx": true,
+        "experimentalObjectRestSpread": true
+      }
+    },
+    "env": {
+      "es6": true,
+      "browser": true,
+      "node": true,
+      "jquery": true,
+      "jest": true
+    },
+    "globals": {}
   }
 }

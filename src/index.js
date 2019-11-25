@@ -8,8 +8,8 @@ import helmet from 'helmet';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
-import config from '../config';
-import passportConfig from '../config/passport';
+import config from './config';
+import passportConfig from './config/passport';
 import auth from './routes/api/auth';
 
 const { port, db, sessionSecret, sessionMap, corsOptions } = config;

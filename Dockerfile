@@ -1,12 +1,20 @@
 FROM node:10
-WORKDIR /api
-ENV PORT=${PORT}
-ENV MONGODB_URI=${MONGODB_URI}
-ENV SECRET=${SECRET}
-ENV SESSION_SECRET=${SESSION_SECRET}
-COPY package.json /app/package.json
-RUN npm install
-RUN npm install nodemon -g
-COPY . /api
+
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+CMD [ "npm", "run", "serve" ]
+
+# Install app dependencies
+COPY package.json /usr/src/app/
+RUN npm install 
+
+# Bundle app source
+COPY . /usr/src/app
+
+# Build the built version
+RUN npm run build
+
+# Remove dev packages
+RUN npm prune --production
+
 EXPOSE 4000
-CMD ["npm", "start"]

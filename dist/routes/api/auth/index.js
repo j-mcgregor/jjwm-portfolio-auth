@@ -11,7 +11,7 @@ var _bcryptjs = _interopRequireDefault(require("bcryptjs"));
 
 var _jsonwebtoken = _interopRequireDefault(require("jsonwebtoken"));
 
-var _config = _interopRequireDefault(require("../../../../config"));
+var _config = _interopRequireDefault(require("../../../config"));
 
 var _User = _interopRequireDefault(require("../../../models/User"));
 

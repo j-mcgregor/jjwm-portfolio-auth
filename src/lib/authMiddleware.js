@@ -2,7 +2,7 @@
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import assembleToken from './assembleToken';
-import config from '../../config';
+import config from '../config';
 
 export default (req, res, next) => {
   const { cookies = {} } = req;
