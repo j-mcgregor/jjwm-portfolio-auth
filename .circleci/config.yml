@@ -1,7 +1,7 @@
 version: 2.1
 jobs:
   build:
-    working_directory: ~/blog-api-auth
+    working_directory: ~/jjwm-portfolio-api
     docker:
       - image: circleci/node:10
     steps:
