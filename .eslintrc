@@ -1,0 +1,67 @@
+{
+  "parser": "babel-eslint",
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 6
+  },
+  "plugins": [
+    "babel",
+    "prettier"
+  ],
+  "env": {
+    "browser": false,
+    "node": true,
+    "jest": true
+  },
+  "globals": {
+    "window": true,
+    "document": true,
+    "browser": false,
+    "sessionStorage": true
+  },
+  "rules": {
+    // indentation of 2 spaces
+    "indent": [
+      1,
+      2,
+      {
+        "SwitchCase": 1
+      }
+    ],
+    // use strict is unnecassary inside of ES6 modules as babel inserts `"use strict";`
+    "strict": "error",
+    // IE does not have a console until you open dev tools
+    // so will throw and exception.
+    "no-console": "error",
+    // ES6 allows for comma on last property but makes code confusing
+    // whether is end of object or not. So turning off so optional.
+    "comma-dangle": [
+      "error",
+      "never"
+    ],
+    // Allow for underscore in variable names, for private etc.
+    "no-underscore-dangle": "off",
+    "linebreak-style": [
+      0,
+      "windows"
+    ],
+    "max-len": [
+      "error",
+      {
+        "code": 180
+      }
+    ],
+    // for test files or tools file, we allow to import dev dependencies
+    "import/no-extraneous-dependencies": [
+      "off",
+      {
+        "devDependencies": [
+          "**/*.spec.js"
+        ],
+        "packageDir": [
+          "./tools"
+        ]
+      }
+    ]
+  }
+}
