@@ -1,5 +1,5 @@
 {
-  "name": "jjwm-portfolio-api",
+  "name": "jjwm-portfolio-auth",
   "version": "1.0.0",
   "description": "The API for this portfolio",
   "main": "src/index.js",
