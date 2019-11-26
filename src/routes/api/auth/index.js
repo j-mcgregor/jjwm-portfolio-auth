@@ -24,7 +24,7 @@ router.post('/login', async (req, res) => {
   }
 
   if (!match) {
-    errors.password = 'Wrong password';
+    errors.password = 'Wrong password amigo!';
   }
 
   if (Object.keys(errors).length > 0) {
