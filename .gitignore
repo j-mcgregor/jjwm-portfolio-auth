@@ -40,6 +40,7 @@ jspm_packages
 
 # Built modules
 dist
+**/dist/*
 **/build/*
 .DS_Store
 *DS_Store
