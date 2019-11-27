@@ -58,7 +58,7 @@ module.exports = {
   // A set of global variables that need to be available in all test environments
   globals: {
     __MONGO_URI__:
-      'mongodb://jjwm-test:jjwm-test1@ds057568.mlab.com:57568/jjwm-portfolio-test'
+      'mongodb://127.0.0.1:27017/jjwm-portfolio-test'
   },
 
   // An array of directory names to be searched recursively up from the requiring module's location
