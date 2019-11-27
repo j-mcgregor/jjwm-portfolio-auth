@@ -16,14 +16,28 @@ describe('User Model Test', () => {
   let db;
 
   beforeAll(async () => {
-    connection = await MongoClient.connect(global.__MONGO_URI__, {
+    connection = await MongoClient.connect(process.env.MONGO_URL, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
-    db = connection.db(global.__MONGO_DB_NAME__);
+    db = await connection.db();
   });
 
-  it('create & save user successfully', () => {
+  afterAll(async () => {
+    await connection.close();
+  });
+
+  it('should insert a doc into collection', async () => {
+    const users = db.collection('users');
+
+    const mockUser = { _id: 'some-user-id', name: 'John' };
+    await users.insertOne(mockUser);
+
+    const insertedUser = await users.findOne({ _id: 'some-user-id' });
+    expect(insertedUser).toEqual(mockUser);
+  });
+
+  it('create & save user successfully', async () => {
     const validUser = new User(userData);
 
     validUser.save().then(savedUser => {
