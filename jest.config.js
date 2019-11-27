@@ -51,14 +51,14 @@ module.exports = {
   // forceCoverageMatch: [],
 
   // A path to a module which exports an async function that is triggered once before all test suites
-  // globalSetup: './jest/setup.js',
+  globalSetup: './jest/setup.js',
 
   // A path to a module which exports an async function that is triggered once after all test suites
-  globalTeardown: './jest/teardown.js',
+  // globalTeardown: './jest/teardown.js',
 
   // A set of global variables that need to be available in all test environments
   globals: {
-    __MONGOD__: config.MONGO_URI_TEST,
+    __MONGO_URI__: config.MONGO_URI_TEST,
     __MONGO_DB_NAME__: config.MONGO_DB_NAME_TEST
   },
 
@@ -90,7 +90,7 @@ module.exports = {
   // notifyMode: "failure-change",
 
   // A preset that is used as a base for Jest's configuration
-  preset: '@shelf/jest-mongodb',
+  // preset: '@shelf/jest-mongodb',
 
   // Run tests from one or more projects
   // projects: null,
