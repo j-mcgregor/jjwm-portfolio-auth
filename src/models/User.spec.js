@@ -15,24 +15,15 @@ describe('User Model Test', () => {
   let connection;
   let db;
 
-  // beforeEach(() => {
-  //   jest.setTimeout(10000);
-  // });
-
   beforeAll(async () => {
-    connection = await MongoClient.connect(global.__MONGO_URI__, {
+    connection = await MongoClient.connect(global.__MONGOD__, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
     db = await connection.db(global.__MONGO_DB_NAME__);
   });
 
-  afterAll(async () => {
-    await connection.close();
-    await db.close();
-  });
-
-  it('create & save user successfully', async () => {
+  it('create & save user successfully', () => {
     const validUser = new User(userData);
 
     validUser.save().then(savedUser => {
@@ -46,7 +37,7 @@ describe('User Model Test', () => {
 
   // Test Schema is working!!!
   // You shouldn't be able to add in any field that isn't defined in the schema
-  it('insert user successfully, but the field does not defined in schema should be undefined', async () => {
+  it('insert user successfully, but the field does not defined in schema should be undefined', () => {
     const userWithInvalidField = new User({
       firstName: 'Baloo',
       lastName: 'Baboo',
@@ -61,7 +52,7 @@ describe('User Model Test', () => {
 
   // Test Validation is working!!!
   // It should us told us the errors in on gender field.
-  it('create user without required field should failed', async () => {
+  it('create user without required field should failed', () => {
     const userWithoutRequiredField = new User({ firstName: 'TekLoon' });
     userWithoutRequiredField
       .save()
