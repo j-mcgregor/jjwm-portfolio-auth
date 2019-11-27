@@ -50,11 +50,11 @@ describe('Test the login path', () => {
       return supertest(app)
         .post('/auth/login', { email: '', password: 'password' })
         .then(res => {
-          console.log(res);
+          // console.log(res);
           expect(res.statusCode).toBe(200);
         })
         .catch(err => {
-          console.log(err);
+          // console.log(err);
         });
     });
   });
