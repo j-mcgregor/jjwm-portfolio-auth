@@ -7,7 +7,9 @@ import authMiddleware from '../../../lib/authMiddleware';
 
 const router = express.Router();
 
-// @route    POST /auth/register
+router.get('/', (req, res) => res.status(200).send('Success'));
+
+// @route    POST /auth/login
 // @desc     Login in a User
 // @access   Public
 
@@ -47,7 +49,7 @@ router.post('/login', async (req, res) => {
   });
   res.cookie('COOKIE_2', signature, { httpOnly: true });
 
-  res.json({ user, token, auth: true });
+  res.status(200).json({ user, token, auth: true });
 });
 
 // @route    POST /users/register

@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import express from 'express';
-import mongoose from 'mongoose';
 import logger from 'morgan';
 import cors from 'cors';
 import passport from 'passport';
@@ -14,27 +13,30 @@ import auth from '../routes/api/auth';
 
 const { sessionSecret, sessionMap, corsOptions } = config;
 
+const env = process.env.NODE_ENV !== 'test';
+const log = (message) => env && console.log(message);
+
 const app = express();
 app.use(logger('dev'));
 
 app.use(helmet());
-console.log('Middleware added: helmet');
+log('Middleware added: helmet');
 
 app.use(cookieParser());
-console.log('Middleware added: cookie-parser');
+log('Middleware added: cookie-parser');
 
 app.use(cors(corsOptions));
-console.log('Middleware added: cookie');
+log('Middleware added: cookie');
 
 app.use(session(sessionMap(sessionSecret)));
-console.log('Middleware added: express-session');
+log('Middleware added: express-session');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-console.log('Middleware added: body-parser');
+log('Middleware added: body-parser');
 
 app.use(passport.initialize());
-console.log('Middleware added: passport');
+log('Middleware added: passport');
 passportConfig(passport);
 
 app.use('/auth', auth);
