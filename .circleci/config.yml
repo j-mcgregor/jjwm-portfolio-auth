@@ -17,7 +17,8 @@ jobs:
       - save_cache:
           key: dependency-cache-{{ checksum "package-lock.json" }}
           paths:
-            - ./node_modules
+            - node_modules
+            - ./node_modules/.cache/mongodb-memory-server/mongodb-binaries
       - run:
           name: lint
           command: npm run lint

@@ -1,10 +1,10 @@
-import dotenv from 'dotenv';
+require('dotenv').config();
 
-dotenv.config();
-
-export default {
+module.exports = {
   port: parseInt(process.env.PORT, 10),
   db: process.env.MONGODB_URI,
+  MONGO_URI_TEST: process.env.MONGO_URI_TEST,
+  MONGO_DB_NAME_TEST: process.env.MONGO_DB_NAME_TEST,
   secret: process.env.SECRET,
   sessionSecret: process.env.SESSION_SECRET,
   sessionMap: pass => ({
