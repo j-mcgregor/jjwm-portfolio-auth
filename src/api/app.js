@@ -14,7 +14,7 @@ import auth from '../routes/api/auth';
 const { sessionSecret, sessionMap, corsOptions } = config;
 
 const env = process.env.NODE_ENV !== 'test';
-const log = (message) => env && console.log(message);
+const log = message => env && console.log(message);
 
 const app = express();
 app.use(logger('dev'));
@@ -41,4 +41,5 @@ passportConfig(passport);
 
 app.use('/auth', auth);
 
-export default app;
+module.exports = app;
+// export default app;
