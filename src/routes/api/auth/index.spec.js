@@ -1,50 +1,61 @@
 import supertest from 'supertest';
-import mongoose from 'mongoose';
-import User from '../../../models/User';
+import { MongoClient } from 'mongodb';
 import app from '../../../api/app';
 
-// MongoClient.Promise = require('bluebird');
-
-jest.useFakeTimers();
-
 describe('Test the root path', () => {
+  test('It should response the GET method', async () => {
+    const res = await supertest(app).get('/auth/');
+
+    expect(res.statusCode).toBe(200);
+  });
+});
+
+describe('Test the login path', () => {
   let connection;
   let db;
-  let user;
 
-  beforeAll(async function blah() {
-    mongoose.connect('mongodb://127.0.0.1:27017/test', {
+  beforeAll(async () => {
+    connection = await MongoClient.connect(process.env.MONGO_URL, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
-
-    // const users = await DB.collection('users');
-
-    // console.log(users);
-    user = {
-      email: 'test1@test.com',
-      password: 'password'
-    };
-
-    User.create(user);
+    db = await connection.db();
   });
 
   afterAll(async () => {
     await connection.close();
   });
 
-  it('It should response the GET method', async () => {
-    const res = await supertest(app).get('/auth/');
-    // console.log(res);
-    expect(res.statusCode).toBe(200);
-  });
+  describe('Login', () => {
+    let user;
 
-  it('should POST', () => {
-    supertest(app)
-      .post('/auth/login', user)
-      .then(res => {
-        debugger;
-        expect(res.statusCode).toBe(999);
-      });
+    beforeAll(async () => {
+      const users = db.collection('users');
+      user = {
+        email: 'test1@test.com',
+        password: 'password'
+      };
+      await users.insertOne(user);
+    });
+
+    test('It should succesfully login a user', () => {
+      return supertest(app)
+        .post('/auth/login', user)
+        .then(res => {
+          expect(res.statusCode).toBe(200);
+        });
+    });
+
+    test('It should reject a user with the wrong email', () => {
+      return supertest(app)
+        .post('/auth/login', { email: '', password: 'password' })
+        .then(res => {
+          // console.log(res);
+          expect(res.statusCode).toBe(200);
+        })
+        .catch(err => {
+          // console.log(err);
+        });
+    });
   });
 });
