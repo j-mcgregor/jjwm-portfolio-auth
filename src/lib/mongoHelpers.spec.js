@@ -13,6 +13,5 @@ describe('Mongo Connection', () => {
       connectionString,
       database
     });
-    console.log(mongoConnection);
   });
 });

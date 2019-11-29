@@ -7,7 +7,13 @@ import authMiddleware from '../../../lib/authMiddleware';
 
 const router = express.Router();
 
+const sendResponse = (fn, key, message, status) => {
+  return fn.status(status).json({ errors: { [key]: message } });
+};
+
 router.get('/', (req, res) => res.status(200).send('Success'));
+
+router.post('/test', (req, res) => res.status(200).json(req.body));
 
 // @route    POST /auth/login
 // @desc     Login in a User
@@ -15,41 +21,47 @@ router.get('/', (req, res) => res.status(200).send('Success'));
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  const errors = {};
-  let match;
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    errors.email = 'User not found';
-  } else {
-    match = await bcrypt.compare(password, user.password);
+  if (!email || !password) {
+    return sendResponse(
+      res,
+      'missingFields',
+      'Please include an email and password',
+      422
+    );
   }
 
-  if (!match) {
-    errors.password = 'Wrong password amigo!';
+  try {
+    const user = await User.findOne({ email });
+
+    try {
+      await bcrypt.compare(password, user.password);
+
+      const body = {
+        id: user.id,
+        email: user.email,
+        dob: user.dob,
+        firstName: user.firstName,
+        lastName: user.lastName
+      };
+
+      const token = await jwt.sign(body, config.secret, { expiresIn: 3600 });
+
+      const [header, payload, signature] = token.split('.');
+
+      res.cookie('COOKIE_1', `${header}.${payload}`, {
+        expires: new Date(Date.now() + 1800000)
+      });
+
+      res.cookie('COOKIE_2', signature, { httpOnly: true });
+
+      const resUser = { email: user.email, id: user._id };
+      res.status(200).json({ user: resUser, token, auth: true });
+    } catch (error) {
+      return sendResponse(res, 'password', 'Wrong password amigo!', 400);
+    }
+  } catch (error) {
+    return sendResponse(res, 'email', 'User not found', 400);
   }
-
-  if (Object.keys(errors).length > 0) {
-    return res.status(400).json({ errors });
-  }
-
-  const body = {
-    id: user.id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName
-  };
-
-  const token = await jwt.sign(body, config.secret, { expiresIn: 3600 });
-
-  const [header, payload, signature] = token.split('.');
-
-  res.cookie('COOKIE_1', `${header}.${payload}`, {
-    expires: new Date(Date.now() + 1800000)
-  });
-  res.cookie('COOKIE_2', signature, { httpOnly: true });
-
-  res.status(200).json({ user, token, auth: true });
 });
 
 // @route    POST /users/register
