@@ -41,5 +41,4 @@ passportConfig(passport);
 
 app.use('/auth', auth);
 
-module.exports = app;
-// export default app;
+export default app;
