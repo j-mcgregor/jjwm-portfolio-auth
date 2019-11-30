@@ -1,51 +1,21 @@
 /* eslint-disable no-console */
-import express from 'express';
-import mongoose from 'mongoose';
-import logger from 'morgan';
-import cors from 'cors';
-import passport from 'passport';
-import helmet from 'helmet';
-import bodyParser from 'body-parser';
-import cookieParser from 'cookie-parser';
-import session from 'express-session';
 import config from './config';
-import passportConfig from './config/passport';
-import auth from './routes/api/auth';
+import index from './api/app';
+import { init } from './lib/mongoDB';
 
-const { port, db, sessionSecret, sessionMap, corsOptions } = config;
+const { PORT, MONGODB_URI, MONGODB_NAME } = config;
 
-const app = express();
-app.use(logger('dev'));
-
-mongoose
-  .connect(db, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => {
+const startServer = async app => {
+  try {
+    await init(MONGODB_URI, MONGODB_NAME);
     console.log('MongoDB connected');
 
-    app.use(helmet());
-    console.log('Middleware added: helmet');
-
-    app.use(cookieParser());
-    console.log('Middleware added: cookie-parser');
-
-    app.use(cors(corsOptions));
-    console.log('Middleware added: cookie');
-
-    app.use(session(sessionMap(sessionSecret)));
-    console.log('Middleware added: express-session');
-
-    app.use(bodyParser.urlencoded({ extended: false }));
-    app.use(bodyParser.json());
-    console.log('Middleware added: body-parser');
-
-    app.use(passport.initialize());
-    console.log('Middleware added: passport');
-    passportConfig(passport);
-
-    app.use('/auth', auth);
-
-    app.listen({ port }, () =>
-      console.log('🚀 Server ready at', `http://localhost:${port}`)
+    app.listen({ port: PORT }, () =>
+      console.log('🚀 Server ready at', `http://localhost:${PORT}`)
     );
-  })
-  .catch(err => console.log(err));
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+startServer(index);
