@@ -9,6 +9,7 @@ import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import config from '../config';
 import passportConfig from '../config/passport';
+import base from '../routes/api/root';
 import auth from '../routes/api/auth';
 
 const { sessionSecret, sessionMap, corsOptions } = config;
@@ -39,6 +40,7 @@ app.use(passport.initialize());
 log('Middleware added: passport');
 passportConfig(passport);
 
+app.use('/', base);
 app.use('/auth', auth);
 
 export default app;

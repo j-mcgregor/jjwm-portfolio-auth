@@ -1,10 +1,9 @@
 require('dotenv').config();
 
 module.exports = {
-  port: parseInt(process.env.PORT, 10),
-  db: process.env.MONGODB_URI,
-  MONGO_URI_TEST: process.env.MONGO_URI_TEST,
-  MONGO_DB_NAME_TEST: process.env.MONGO_DB_NAME_TEST,
+  PORT: parseInt(process.env.PORT, 10),
+  MONGODB_URI: process.env.MONGODB_URI,
+  MONGODB_NAME: process.env.MONGODB_NAME,
   secret: process.env.SECRET,
   sessionSecret: process.env.SESSION_SECRET,
   sessionMap: pass => ({
@@ -16,6 +15,10 @@ module.exports = {
     saveUninitialized: false,
     resave: false
   }),
+  mongoOptions: {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  },
   corsOptions: {
     origin: '*',
     credentials: true,
