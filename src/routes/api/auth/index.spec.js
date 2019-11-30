@@ -1,27 +1,22 @@
 import supertest from 'supertest';
 import bcrypt from 'bcryptjs';
 import app from '../../../api/app';
-import {
-  init,
-  insertItem,
-  getItems,
-  closeMongoConnection,
-  dropDB
-} from '../../../lib/mongoDB';
+import * as mdb from '../../../lib/mongoDB';
 import hashPassword from '../../../lib/bcryptHelpers';
 
 const connectionString = global.__MONGO_URI__; // This is coming from @shelf/jest-mongodb
 const database = 'test';
+
 jest.mock('../../../lib/bcryptHelpers');
 
 describe('Auth routes', () => {
   beforeEach(async () => {
-    await init(connectionString, database);
+    await mdb.init(connectionString, database);
 
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash('password', salt);
 
-    await insertItem({
+    await mdb.insertItem({
       collectionName: 'users',
       item: {
         email: 'test1@test.com',
@@ -31,12 +26,12 @@ describe('Auth routes', () => {
   });
 
   afterEach(async () => {
-    await dropDB({ collectionName: 'users' });
+    await mdb.dropDB({ collectionName: 'users' });
   });
 
   afterAll(async () => {
     jest.restoreMock('../../../lib/bcryptHelpers');
-    await closeMongoConnection();
+    await mdb.closeMongoConnection();
   });
 
   describe('Login', () => {
@@ -185,6 +180,20 @@ describe('Auth routes', () => {
       });
     });
 
-    it('should return an error if saving the user fails', async () => {});
+    it('should return an error if saving the user fails', async () => {
+      // Have to import * as mdb to make this test work
+      // Only want to test 1 exported function
+      mdb.insertItem = jest.fn().mockReturnValue(false);
+      hashPassword.mockReturnValue(true);
+
+      const res = await supertest(app)
+        .post('/auth/register')
+        .send(newUser);
+
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toEqual({
+        errors: { saveUserError: 'Something went wrong while saving the user' }
+      });
+    });
   });
 });
