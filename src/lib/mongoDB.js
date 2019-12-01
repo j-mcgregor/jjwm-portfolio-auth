@@ -40,6 +40,10 @@ const dropDB = ({ collectionName }) => {
   return collection.drop();
 };
 
+const createCollection = ({ collectionName }) => {
+  return mongoConnection.db.createCollection(collectionName);
+};
+
 // Closes and resets the mongoConnection object
 const closeMongoConnection = () => {
   if (mongoConnection.connection) {
@@ -56,5 +60,6 @@ export {
   getItems,
   updateItem,
   closeMongoConnection,
-  dropDB
+  dropDB,
+  createCollection
 };
