@@ -126,9 +126,21 @@ router.post('/register', async (req, res) => {
   }
 });
 
+/**
+ @route    GET /auth/verifyUser
+ @desc     Verify a user using the custom authMiddleware 
+ @access   Private
+ */
+
 router.get('/verifyUser', authMiddleware, (req, res, next) => {
   res.json({ isAuthenticated: true });
 });
+
+/**
+ @route    GET /auth/logout
+ @desc     Logout the user 
+ @access   Public
+ */
 
 router.get('/logout', (req, res, next) => {
   res.cookie('COOKIE_1', '');
@@ -136,6 +148,12 @@ router.get('/logout', (req, res, next) => {
 
   res.json({ loggedOut: true, isAuthenticated: false });
 });
+
+/**
+ @route    GET /auth/currentUser
+ @desc     Get the current user based on the custom middleware 
+ @access   Private
+ */
 
 router.get('/currentUser', authMiddleware, async (req, res) => {
   const { email } = req.user;
@@ -147,6 +165,12 @@ router.get('/currentUser', authMiddleware, async (req, res) => {
     res.json({ error });
   }
 });
+
+/**
+ @route    GET /auth/verifyPassword
+ @desc     Verify the password for the option of changing password
+ @access   Private
+ */
 
 router.post('/verifyPassword', authMiddleware, async (req, res) => {
   const { email, password, newPassword, newPasswordConfirm } = req.body;

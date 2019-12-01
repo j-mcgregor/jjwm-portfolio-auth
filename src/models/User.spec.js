@@ -1,71 +1,73 @@
 /* eslint-disable no-console */
 import mongoose from 'mongoose';
-import { MongoClient } from 'mongodb';
+import * as mdb from '../lib/mongoDB';
 import User from './User';
 
-const userData = {
-  firstName: 'Baloo',
-  lastName: 'Baboo',
-  dob: new Date(),
-  email: 'baloo@baboo.com',
-  password: 'password'
-};
+const connectionString = global.__MONGO_URI__;
+const database = 'test';
 
 describe('User Model Test', () => {
-  let connection;
-  let db;
-
   beforeAll(async () => {
-    connection = await MongoClient.connect(process.env.MONGO_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-    db = await connection.db();
+    await mdb.init(connectionString, database);
+  });
+
+  afterEach(async () => {
+    await mdb.dropDB({ collectionName: 'users' });
+    await mdb.createCollection({ collectionName: 'users' });
   });
 
   afterAll(async () => {
-    await connection.close();
+    await mdb.closeMongoConnection();
   });
 
   it('should insert a doc into collection', async () => {
-    const users = db.collection('users');
-
     const mockUser = { _id: 'some-user-id', name: 'John' };
-    await users.insertOne(mockUser);
 
-    const insertedUser = await users.findOne({ _id: 'some-user-id' });
-    expect(insertedUser).toEqual(mockUser);
+    const insertedUser = await mdb.insertItem({
+      collectionName: 'users',
+      item: mockUser
+    });
+    expect(insertedUser.ops[0]).toEqual(mockUser);
   });
 
   it('create & save user successfully', async () => {
+    const userData = {
+      firstName: 'Baloo',
+      lastName: 'Baboo',
+      dob: new Date(),
+      email: 'baloo@baboo.com',
+      password: 'password'
+    };
+
     const validUser = new User(userData);
 
-    validUser.save().then(savedUser => {
-      // Object Id should be defined when successfully saved to MongoDB.
-      expect(savedUser._id).toBeDefined();
-      expect(savedUser.firstName).toBe(userData.firstName);
-      expect(savedUser.lastName).toBe(userData.lastName);
-      expect(savedUser.email).toBe(userData.email);
+    const savedUser = await mdb.insertItem({
+      collectionName: 'users',
+      item: validUser
     });
-  });
 
-  // Test Schema is working!!!
-  // You shouldn't be able to add in any field that isn't defined in the schema
-  it('insert user successfully, but the field does not defined in schema should be undefined', () => {
+    expect(savedUser.ops[0]._id).toBeDefined();
+    expect(savedUser.ops[0].firstName).toBe(userData.firstName);
+    expect(savedUser.ops[0].lastName).toBe(userData.lastName);
+    expect(savedUser.ops[0].email).toBe(userData.email);
+  });
+  it('insert user successfully, but the field does not defined in schema should be undefined', async () => {
     const userWithInvalidField = new User({
       firstName: 'Baloo',
       lastName: 'Baboo',
       email: 'Baboo@baboo.com',
       nickname: 'Handsome TekLoon'
     });
-    userWithInvalidField.save().then(savedUserWithInvalidField => {
-      expect(savedUserWithInvalidField._id).toBeDefined();
-      expect(savedUserWithInvalidField.nickkname).toBeUndefined();
+
+    const savedUser = await mdb.insertItem({
+      collectionName: 'users',
+      item: userWithInvalidField
     });
+
+    expect(savedUser.ops[0]._id).toBeDefined();
+    expect(savedUser.ops[0].nickkname).toBeUndefined();
   });
 
-  // Test Validation is working!!!
-  // It should us told us the errors in on gender field.
   it('create user without required field should failed', () => {
     const userWithoutRequiredField = new User({ firstName: 'TekLoon' });
     userWithoutRequiredField
