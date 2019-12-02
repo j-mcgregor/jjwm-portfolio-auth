@@ -68,8 +68,9 @@ describe('User Model Test', () => {
     expect(savedUser.ops[0].nickkname).toBeUndefined();
   });
 
-  it('create user without required field should failed', () => {
+  it('create user without required field should failed', async () => {
     const userWithoutRequiredField = new User({ firstName: 'TekLoon' });
+
     userWithoutRequiredField
       .save()
       .then(user => user)

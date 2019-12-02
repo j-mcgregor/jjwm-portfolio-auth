@@ -196,4 +196,22 @@ describe('Auth routes', () => {
       });
     });
   });
+
+  describe('verifyUser', () => {
+    it('should return isAuthenticated=true if valid', () => {});
+
+    it('should NOT return anything if invalid', () => {});
+  });
+
+  describe('logout', () => {
+    it('should successfully logout and reset a user', () => {});
+  });
+
+  describe('currentUser', () => {
+    it('should successfully return the current user', () => {});
+  });
+
+  describe('verifyPassword', () => {
+    it('should successfully verify the users password', () => {});
+  });
 });
