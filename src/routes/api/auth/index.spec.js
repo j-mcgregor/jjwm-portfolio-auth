@@ -3,8 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import app from '../../../api/app';
 import config from '../../../config';
-import mdb from '../../../lib/mongoDB';
-import { insertItem } from '../../../lib/mongoDB';
+import * as mdb from '../../../lib/mongoDB';
+// import { insertItem } from '../../../lib/mongoDB';
 import hashPassword from '../../../lib/bcryptHelpers';
 
 const connectionString = global.__MONGO_URI__; // This is coming from @shelf/jest-mongodb
@@ -54,9 +54,8 @@ describe('Auth routes', () => {
       expect(body.auth).toBe(true);
       expect(body.user.email).toBe('test1@test.com');
       expect(body.user.id).toBeDefined();
-      expect(header['set-cookie']).toHaveLength(2);
-      expect(header['set-cookie'][0]).toBeDefined();
-      expect(header['set-cookie'][1]).toBeDefined();
+      expect(header['set-cookie'][0][0]).toBeDefined();
+      expect(header['set-cookie'][0][1]).toBeDefined();
     });
 
     it('should return an error message if either email or password missing', async () => {
@@ -217,7 +216,7 @@ describe('Auth routes', () => {
         .post('/auth/register')
         .send(newUser);
 
-      console.log(res);
+      // console.log(res);
       expect(res.statusCode).toBe(500);
       expect(res.body).toEqual({
         errors: { saveUserError: 'Something went wrong while saving the user' }
@@ -232,10 +231,7 @@ describe('Auth routes', () => {
 
       const res = await supertest(app)
         .get('/auth/verifyUser')
-        .set('Cookie', [
-          `COOKIE_1=${header}.${payload}`,
-          `COOKIE_2=${signature}`
-        ]);
+        .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
 
       expect(res.body).toEqual({ isAuthenticated: true });
       expect(res.statusCode).toBe(200);
@@ -247,7 +243,7 @@ describe('Auth routes', () => {
 
       const res = await supertest(app)
         .get('/auth/verifyUser')
-        .set('Cookie', [`COOKIE_1=${header}.broken`, `COOKIE_2=${signature}`]);
+        .set('Cookie', `COOKIE_1=${header}.broken;COOKIE_2=${signature}`);
 
       expect(res.body).toEqual({ error: 'Token malformed' });
       expect(res.statusCode).toBe(400);
@@ -268,17 +264,12 @@ describe('Auth routes', () => {
 
       const res = await supertest(app)
         .get('/auth/logout')
-        .set('Cookie', [
-          `COOKIE_1=${header}.${payload}`,
-          `COOKIE_2=${signature}`
-        ]);
+        .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
 
       expect(res.body).toEqual({ loggedOut: true, isAuthenticated: false });
       expect(res.statusCode).toBe(200);
       expect(res.headers['set-cookie'][0]).toEqual(
-        expect.stringContaining('COOKIE_1=;')
-      );
-      expect(res.headers['set-cookie'][1]).toEqual(
+        expect.stringContaining('COOKIE_1=;'),
         expect.stringContaining('COOKIE_2=;')
       );
     });
@@ -314,10 +305,7 @@ describe('Auth routes', () => {
 
       const res = await supertest(app)
         .get('/auth/currentUser')
-        .set('Cookie', [
-          `COOKIE_1=${header}.${payload}`,
-          `COOKIE_2=${signature}`
-        ]);
+        .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
 
       expect(res.statusCode).toBe(200);
       expect(res.body).toEqual({
