@@ -6,7 +6,10 @@ const mongoConnection = {
   db: null
 };
 
-const init = async (connectionUrl = 'mongodb://localhost:27017', dbName) => {
+export const init = async (
+  connectionUrl = 'mongodb://localhost:27017',
+  dbName
+) => {
   const uri =
     process.env.NODE_ENV === 'test'
       ? connectionUrl
@@ -15,37 +18,37 @@ const init = async (connectionUrl = 'mongodb://localhost:27017', dbName) => {
   mongoConnection.db = client.db(dbName);
 };
 
-const insertItem = ({ collectionName, item }) => {
+export const insertItem = ({ collectionName, item }) => {
   const collection = mongoConnection.db.collection(collectionName);
   return collection.insertOne(item);
 };
 
-const getItem = ({ collectionName, key, value }) => {
+export const getItem = ({ collectionName, key, value }) => {
   const collection = mongoConnection.db.collection(collectionName);
   return collection.findOne({ [key]: value });
 };
 
-const getItems = ({ collectionName }) => {
+export const getItems = ({ collectionName }) => {
   const collection = mongoConnection.db.collection(collectionName);
   return collection.find({}).toArray();
 };
 
-const updateItem = ({ collectionName, id, value }) => {
+export const updateItem = ({ collectionName, id, value }) => {
   const collection = mongoConnection.db.collection(collectionName);
   return collection.updateOne({ _id: ObjectId(id) }, { $inc: { value } });
 };
 
-const dropDB = ({ collectionName }) => {
+export const dropDB = ({ collectionName }) => {
   const collection = mongoConnection.db.collection(collectionName);
   return collection.drop();
 };
 
-const createCollection = ({ collectionName }) => {
+export const createCollection = ({ collectionName }) => {
   return mongoConnection.db.createCollection(collectionName);
 };
 
 // Closes and resets the mongoConnection object
-const closeMongoConnection = () => {
+export const closeMongoConnection = () => {
   if (mongoConnection.connection) {
     mongoConnection.connection.close();
     mongoConnection.connection = null;
@@ -53,7 +56,7 @@ const closeMongoConnection = () => {
   }
 };
 
-export {
+export default {
   init,
   insertItem,
   getItem,

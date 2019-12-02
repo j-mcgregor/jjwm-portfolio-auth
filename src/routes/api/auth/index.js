@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import config from '../../../config';
 import User from '../../../models/User';
-import { getItem, insertItem } from '../../../lib/mongoDB';
+import { getItem, getItems, insertItem } from '../../../lib/mongoDB';
 import authMiddleware from '../../../lib/authMiddleware';
 import hashPassword from '../../../lib/bcryptHelpers';
 
@@ -132,8 +132,8 @@ router.post('/register', async (req, res) => {
  @access   Private
  */
 
-router.get('/verifyUser', authMiddleware, (req, res, next) => {
-  res.json({ isAuthenticated: true });
+router.get('/verifyUser', authMiddleware, (req, res) => {
+  res.status(200).json({ isAuthenticated: true });
 });
 
 /**
@@ -142,11 +142,11 @@ router.get('/verifyUser', authMiddleware, (req, res, next) => {
  @access   Public
  */
 
-router.get('/logout', (req, res, next) => {
+router.get('/logout', (req, res) => {
   res.cookie('COOKIE_1', '');
   res.cookie('COOKIE_2', '');
 
-  res.json({ loggedOut: true, isAuthenticated: false });
+  res.status(200).json({ loggedOut: true, isAuthenticated: false });
 });
 
 /**
@@ -159,10 +159,15 @@ router.get('/currentUser', authMiddleware, async (req, res) => {
   const { email } = req.user;
 
   try {
-    const user = await User.findOne({ email });
-    res.json({ user });
+    const user = await getItem({
+      collectionName: 'users',
+      key: 'email',
+      value: email
+    });
+
+    res.status(200).json({ user });
   } catch (error) {
-    res.json({ error });
+    res.status(400).json({ error });
   }
 });
 

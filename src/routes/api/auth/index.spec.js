@@ -1,7 +1,10 @@
 import supertest from 'supertest';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import app from '../../../api/app';
-import * as mdb from '../../../lib/mongoDB';
+import config from '../../../config';
+import mdb from '../../../lib/mongoDB';
+import { insertItem } from '../../../lib/mongoDB';
 import hashPassword from '../../../lib/bcryptHelpers';
 
 const connectionString = global.__MONGO_URI__; // This is coming from @shelf/jest-mongodb
@@ -10,31 +13,32 @@ const database = 'test';
 jest.mock('../../../lib/bcryptHelpers');
 
 describe('Auth routes', () => {
-  beforeEach(async () => {
-    await mdb.init(connectionString, database);
-
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash('password', salt);
-
-    await mdb.insertItem({
-      collectionName: 'users',
-      item: {
-        email: 'test1@test.com',
-        password: hash
-      }
-    });
-  });
-
-  afterEach(async () => {
-    await mdb.dropDB({ collectionName: 'users' });
-  });
-
-  afterAll(async () => {
-    jest.restoreMock('../../../lib/bcryptHelpers');
-    await mdb.closeMongoConnection();
-  });
-
   describe('Login', () => {
+    beforeEach(async () => {
+      await mdb.init(connectionString, database);
+
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash('password', salt);
+
+      await mdb.insertItem({
+        collectionName: 'users',
+        item: {
+          email: 'test1@test.com',
+          password: hash
+        }
+      });
+    });
+
+    afterEach(async () => {
+      await mdb.dropDB({ collectionName: 'users' });
+      await mdb.createCollection({ collectionName: 'users' });
+    });
+
+    afterAll(async () => {
+      jest.restoreMock('../../../lib/bcryptHelpers');
+      await mdb.closeMongoConnection();
+    });
+
     it('should succesfully login a user', async () => {
       const res = await supertest(app)
         .post('/auth/login')
@@ -99,7 +103,20 @@ describe('Auth routes', () => {
   describe('Register', () => {
     let newUser;
 
-    beforeEach(() => {
+    beforeEach(async () => {
+      await mdb.init(connectionString, database);
+
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash('password', salt);
+
+      await mdb.insertItem({
+        collectionName: 'users',
+        item: {
+          email: 'test1@test.com',
+          password: hash
+        }
+      });
+
       newUser = {
         firstName: 'Test',
         lastName: 'McTesterson',
@@ -107,6 +124,16 @@ describe('Auth routes', () => {
         password: 'password',
         password2: 'password'
       };
+    });
+
+    afterEach(async () => {
+      await mdb.dropDB({ collectionName: 'users' });
+      await mdb.createCollection({ collectionName: 'users' });
+    });
+
+    afterAll(async () => {
+      jest.restoreMock('../../../lib/bcryptHelpers');
+      await mdb.closeMongoConnection();
     });
 
     it('should register a user', async () => {
@@ -190,6 +217,7 @@ describe('Auth routes', () => {
         .post('/auth/register')
         .send(newUser);
 
+      console.log(res);
       expect(res.statusCode).toBe(500);
       expect(res.body).toEqual({
         errors: { saveUserError: 'Something went wrong while saving the user' }
@@ -198,20 +226,111 @@ describe('Auth routes', () => {
   });
 
   describe('verifyUser', () => {
-    it('should return isAuthenticated=true if valid', () => {});
+    it('should return isAuthenticated=true if valid', async () => {
+      const token = await jwt.sign({ message: 'Test' }, config.secret);
+      const [header, payload, signature] = token.split('.');
 
-    it('should NOT return anything if invalid', () => {});
+      const res = await supertest(app)
+        .get('/auth/verifyUser')
+        .set('Cookie', [
+          `COOKIE_1=${header}.${payload}`,
+          `COOKIE_2=${signature}`
+        ]);
+
+      expect(res.body).toEqual({ isAuthenticated: true });
+      expect(res.statusCode).toBe(200);
+    });
+
+    it('should return Error if cookie is invalid', async () => {
+      const token = await jwt.sign({ message: 'Test' }, config.secret);
+      const [header, _, signature] = token.split('.');
+
+      const res = await supertest(app)
+        .get('/auth/verifyUser')
+        .set('Cookie', [`COOKIE_1=${header}.broken`, `COOKIE_2=${signature}`]);
+
+      expect(res.body).toEqual({ error: 'Token malformed' });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('should return Error if no cookies', async () => {
+      const res = await supertest(app).get('/auth/verifyUser');
+
+      expect(res.body).toEqual({ error: 'Missing cookies' });
+      expect(res.statusCode).toBe(401);
+    });
   });
 
   describe('logout', () => {
-    it('should successfully logout and reset a user', () => {});
+    it('should successfully logout and reset the cookies ', async () => {
+      const token = await jwt.sign({ message: 'Test' }, config.secret);
+      const [header, payload, signature] = token.split('.');
+
+      const res = await supertest(app)
+        .get('/auth/logout')
+        .set('Cookie', [
+          `COOKIE_1=${header}.${payload}`,
+          `COOKIE_2=${signature}`
+        ]);
+
+      expect(res.body).toEqual({ loggedOut: true, isAuthenticated: false });
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['set-cookie'][0]).toEqual(
+        expect.stringContaining('COOKIE_1=;')
+      );
+      expect(res.headers['set-cookie'][1]).toEqual(
+        expect.stringContaining('COOKIE_2=;')
+      );
+    });
   });
 
   describe('currentUser', () => {
-    it('should successfully return the current user', () => {});
+    beforeEach(async () => {
+      await mdb.init(connectionString, database);
+
+      await insertItem({
+        collectionName: 'users',
+        item: {
+          _id: '123',
+          email: 'test1@test.com',
+          password: 'password'
+        }
+      });
+    });
+
+    afterEach(async () => {
+      await mdb.dropDB({ collectionName: 'users' });
+      await mdb.createCollection({ collectionName: 'users' });
+    });
+
+    afterAll(async () => {
+      jest.restoreMock('../../../lib/bcryptHelpers');
+      await mdb.closeMongoConnection();
+    });
+
+    it('should successfully return the current user', async () => {
+      const token = await jwt.sign({ email: 'test1@test.com' }, config.secret);
+      const [header, payload, signature] = token.split('.');
+
+      const res = await supertest(app)
+        .get('/auth/currentUser')
+        .set('Cookie', [
+          `COOKIE_1=${header}.${payload}`,
+          `COOKIE_2=${signature}`
+        ]);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({
+        user: {
+          _id: '123',
+          email: 'test1@test.com',
+          password: 'password'
+        }
+      });
+    });
   });
 
-  describe('verifyPassword', () => {
-    it('should successfully verify the users password', () => {});
-  });
+  // describe('verifyPassword', () => {
+  //   it('should successfully verify the users password', () => {});
+  // });
 });
