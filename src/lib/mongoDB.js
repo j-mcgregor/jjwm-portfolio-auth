@@ -1,10 +1,6 @@
-import { MongoClient, ObjectId, ObjectID } from 'mongodb';
+import { MongoClient, ObjectID } from 'mongodb';
 import { mongoOptions } from '../config/index';
 import log from './logger';
-
-ObjectId.prototype.valueOf = function() {
-  return this.toString();
-};
 
 const mongoConnection = {
   connection: null,
@@ -26,17 +22,17 @@ const retry = ({ fn, retryDelay, retryCount, err = null, onError }) => {
   });
 };
 
+const getUri = (url, db) =>
+  process.env.NODE_ENV === 'test' ? url : `${url}/${db}`;
+
 export const init = async (
   connectionUrl = 'mongodb://localhost:27017',
   dbName
 ) => {
-  const uri =
-    process.env.NODE_ENV === 'test'
-      ? connectionUrl
-      : `${connectionUrl}/${dbName}`;
-
+  const uri = getUri(connectionUrl, dbName);
   const err = null;
   const fn = () => MongoClient.connect(uri, mongoOptions); // return Promise
+
   try {
     const connection = await retry({
       fn,
