@@ -7,6 +7,9 @@ import passportConfig from '../config/passport';
 
 passportConfig(passport);
 
+// TO DO - logger
+// TO DO - handleError function
+
 export default (req, res, next) => {
   const { cookies } = req;
 
@@ -27,11 +30,11 @@ export default (req, res, next) => {
         if (!decoded) throw new Error();
         req.user = decoded;
         next();
-      } catch (error) {
+      } catch (e) {
         return res.status(400).json({ error: 'Token malformed' });
       }
     })(req, res, next);
-  } catch (error) {
+  } catch (e) {
     return res.status(401).json({ error: 'Missing cookies' });
   }
 };

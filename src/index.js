@@ -13,8 +13,8 @@ const startServer = async app => {
     app.listen({ port: PORT }, () =>
       console.log('🚀 Server ready at', `http://localhost:${PORT}`)
     );
-  } catch (error) {
-    console.log(error);
+  } catch (e) {
+    console.error(e);
   }
 };
 

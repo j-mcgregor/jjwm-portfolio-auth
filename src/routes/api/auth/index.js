@@ -67,7 +67,7 @@ router.post('/login', async (req, res) => {
 
       const resUser = { email: user.email, id: user._id };
       res.status(200).json({ user: resUser, token, auth: true });
-    } catch (error) {
+    } catch (e) {
       return sendResponse(res, 'password', 'Wrong password amigo!', 400);
     }
   } catch (error) {
@@ -177,7 +177,7 @@ router.get('/currentUser', authMiddleware, async (req, res) => {
     };
 
     return res.status(200).json({ user });
-  } catch (error) {
+  } catch (e) {
     return sendResponse(res, 'currentUser', 'Something went wrong', 400);
   }
 });
@@ -211,16 +211,14 @@ router.post('/changePassword', authMiddleware, async (req, res) => {
         if (!hash) throw new Error('Couldnt find a user with that email');
         user.password = hash;
 
-        const updatedUser = await updateItem({
+        await updateItem({
           collectionName: 'users',
           email,
           value: user
         });
 
-        console.log(updatedUser);
         return res.status(200).json({ message: 'Success' });
       } catch (e) {
-        console.log(e);
         return sendResponse(res, 'hashPassword', e, 400);
       }
     } catch (e) {

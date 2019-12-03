@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import supertest from 'supertest';
 import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
@@ -325,8 +326,8 @@ describe('Auth routes', () => {
             password: hash
           }
         });
-      } catch (error) {
-        console.error(error);
+      } catch (e) {
+        console.error(e);
       }
     });
 
@@ -335,7 +336,7 @@ describe('Auth routes', () => {
         await mdb.dropDB({ collectionName: 'users' });
         await mdb.createCollection({ collectionName: 'users' });
       } catch (e) {
-        console.error(error);
+        console.error(e);
       }
     });
 
@@ -353,7 +354,6 @@ describe('Auth routes', () => {
         })
         .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
 
-      // console.log(res.error); // useful!!
       expect(res.body).toEqual({ message: 'Success' });
       expect(res.statusCode).toBe(200);
     });
