@@ -11,7 +11,7 @@ describe('Login', () => {
         { method: 'POST', router: 'http://localhost:4000/auth/login' },
         { method: 'POST', router: 'http://localhost:4000/auth/register' },
         { method: 'POST', router: 'http://localhost:4000/auth/verifyUser' },
-        { method: 'POST', router: 'http://localhost:4000/auth/verifyPassword' },
+        { method: 'POST', router: 'http://localhost:4000/auth/changePassword' },
         { method: 'POST', router: 'http://localhost:4000/auth/logout' },
         { method: 'POST', router: 'http://localhost:4000/auth/currentUser' }
       ]

@@ -1,9 +1,15 @@
 import express from 'express';
+import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import config from '../../../config';
 import User from '../../../models/User';
-import { getItem, getItems, insertItem } from '../../../lib/mongoDB';
+import {
+  getItem,
+  getItems,
+  insertItem,
+  updateItem
+} from '../../../lib/mongoDB';
 import authMiddleware from '../../../lib/authMiddleware';
 import hashPassword from '../../../lib/bcryptHelpers';
 
@@ -133,7 +139,7 @@ router.post('/register', async (req, res) => {
  */
 
 router.get('/verifyUser', authMiddleware, (req, res) => {
-  res.status(200).json({ isAuthenticated: true });
+  return res.status(200).json({ isAuthenticated: true });
 });
 
 /**
@@ -146,7 +152,7 @@ router.get('/logout', (req, res) => {
   res.cookie('COOKIE_1', '');
   res.cookie('COOKIE_2', '');
 
-  res.status(200).json({ loggedOut: true, isAuthenticated: false });
+  return res.status(200).json({ loggedOut: true, isAuthenticated: false });
 });
 
 /**
@@ -159,53 +165,69 @@ router.get('/currentUser', authMiddleware, async (req, res) => {
   const { email } = req.user;
 
   try {
+    const u = await getItem({
+      collectionName: 'users',
+      key: 'email',
+      value: email
+    });
+
+    const user = {
+      email: u.email,
+      id: u._id
+    };
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    return sendResponse(res, 'currentUser', 'Something went wrong', 400);
+  }
+});
+
+/**
+ @route    GET /auth/changePassword
+ @desc     Verify the password for the option of changing password
+ @access   Private
+ */
+
+router.post('/changePassword', authMiddleware, async (req, res) => {
+  const { email, password, newPassword, newPasswordConfirm } = req.body;
+
+  try {
     const user = await getItem({
       collectionName: 'users',
       key: 'email',
       value: email
     });
 
-    res.status(200).json({ user });
-  } catch (error) {
-    res.status(400).json({ error });
-  }
-});
+    try {
+      const match = await bcrypt.compare(password, user.password);
 
-/**
- @route    GET /auth/verifyPassword
- @desc     Verify the password for the option of changing password
- @access   Private
- */
+      if (!match) throw new Error('You must enter your current password');
+      if (newPassword !== newPasswordConfirm)
+        throw new Error('Passwords dont match');
 
-router.post('/verifyPassword', authMiddleware, async (req, res) => {
-  const { email, password, newPassword, newPasswordConfirm } = req.body;
-  const errors = {};
+      try {
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(newPassword, salt);
+        if (!hash) throw new Error('Couldnt find a user with that email');
+        user.password = hash;
 
-  const user = await User.findOne({ email });
-  const match = await bcrypt.compare(password, user.password);
+        const updatedUser = await updateItem({
+          collectionName: 'users',
+          email,
+          value: user
+        });
 
-  if (!match) {
-    errors.wrongPassword = 'You must enter your current password';
-  }
-
-  if (newPassword !== newPasswordConfirm) {
-    errors.password = "Passwords don't match";
-  }
-
-  const salt = await bcrypt.genSalt(10);
-
-  try {
-    const hash = await bcrypt.hash(newPassword, salt);
-    user.password = hash;
-    user.save();
+        console.log(updatedUser);
+        return res.status(200).json({ message: 'Success' });
+      } catch (e) {
+        console.log(e);
+        return sendResponse(res, 'hashPassword', e, 400);
+      }
+    } catch (e) {
+      return sendResponse(res, 'changePassword', e, 400);
+    }
   } catch (e) {
-    res.json(e);
-  }
-
-  if (Object.keys(errors).length > 0) {
-    return res.status(400).json({ errors });
-  } else {
-    return res.status(201).json({ message: 'Success' });
+    return sendResponse(res, 'noEmail', e, 400);
   }
 });
 

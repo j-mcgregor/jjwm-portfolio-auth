@@ -18,7 +18,7 @@ router.get('/', (req, res) =>
         method: 'POST'
       },
       {
-        router: 'http://localhost:4000/auth/verifyPassword',
+        router: 'http://localhost:4000/auth/changePassword',
         method: 'POST'
       },
       {

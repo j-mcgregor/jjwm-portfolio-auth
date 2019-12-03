@@ -1,9 +1,28 @@
-import { MongoClient, ObjectId } from 'mongodb';
+import { MongoClient, ObjectId, ObjectID } from 'mongodb';
 import { mongoOptions } from '../config/index';
+
+ObjectId.prototype.valueOf = function() {
+  return this.toString();
+};
 
 const mongoConnection = {
   connection: null,
   db: null
+};
+
+const delay = retryDelay =>
+  new Promise(resolve => setTimeout(() => resolve(), retryDelay));
+
+const retry = ({ fn, retryDelay, retryCount, err = null, onError }) => {
+  if (!retryCount) {
+    return Promise.reject(err);
+  }
+  return fn().catch(error => {
+    onError(error);
+    return delay(retryDelay).then(() =>
+      retry({ fn, retryCount: retryCount - 1, err: error, onError, retryDelay })
+    );
+  });
 };
 
 export const init = async (
@@ -14,8 +33,16 @@ export const init = async (
     process.env.NODE_ENV === 'test'
       ? connectionUrl
       : `${connectionUrl}/${dbName}`;
-  const client = await MongoClient.connect(uri, mongoOptions);
-  mongoConnection.db = client.db(dbName);
+
+  const fn = () => MongoClient.connect(uri, mongoOptions); // return Promise
+  return retry({ fn, retryDelay: 100, retryCount: 3, onError: () => {} }).then(
+    connection => {
+      if (!connection) throw new Error('no mongo connection set');
+      mongoConnection.connection = connection;
+      mongoConnection.db = connection.db(dbName);
+      return mongoConnection;
+    }
+  );
 };
 
 export const insertItem = ({ collectionName, item }) => {
@@ -35,7 +62,12 @@ export const getItems = ({ collectionName }) => {
 
 export const updateItem = ({ collectionName, id, value }) => {
   const collection = mongoConnection.db.collection(collectionName);
-  return collection.updateOne({ _id: ObjectId(id) }, { $inc: { value } });
+
+  return collection.updateOne(
+    { _id: new ObjectID(id) },
+    { $set: { value } },
+    { upsert: true }
+  );
 };
 
 export const dropDB = ({ collectionName }) => {

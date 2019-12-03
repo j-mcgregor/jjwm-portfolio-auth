@@ -1,13 +1,14 @@
 import supertest from 'supertest';
+import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import app from '../../../api/app';
 import config from '../../../config';
 import * as mdb from '../../../lib/mongoDB';
-// import { insertItem } from '../../../lib/mongoDB';
 import hashPassword from '../../../lib/bcryptHelpers';
 
-const connectionString = global.__MONGO_URI__; // This is coming from @shelf/jest-mongodb
+// This is coming from @shelf/jest-mongodb
+const connectionString = global.__MONGO_URI__;
 const database = 'test';
 
 jest.mock('../../../lib/bcryptHelpers');
@@ -130,11 +131,6 @@ describe('Auth routes', () => {
       await mdb.createCollection({ collectionName: 'users' });
     });
 
-    afterAll(async () => {
-      jest.restoreMock('../../../lib/bcryptHelpers');
-      await mdb.closeMongoConnection();
-    });
-
     it('should register a user', async () => {
       hashPassword.mockReturnValue('password');
 
@@ -207,16 +203,17 @@ describe('Auth routes', () => {
     });
 
     it('should return an error if saving the user fails', async () => {
-      // Have to import * as mdb to make this test work
-      // Only want to test 1 exported function
-      mdb.insertItem = jest.fn().mockReturnValue(false);
+      const insertItem = mdb.insertItem;
+      mdb.insertItem = jest.fn().mockReturnValueOnce(false);
       hashPassword.mockReturnValue(true);
 
       const res = await supertest(app)
         .post('/auth/register')
         .send(newUser);
 
-      // console.log(res);
+      // Not ideal but have to use this method since mockReset and mockRestore only reset the mocked function, NOT to its original state
+      mdb.insertItem = insertItem;
+
       expect(res.statusCode).toBe(500);
       expect(res.body).toEqual({
         errors: { saveUserError: 'Something went wrong while saving the user' }
@@ -279,7 +276,7 @@ describe('Auth routes', () => {
     beforeEach(async () => {
       await mdb.init(connectionString, database);
 
-      await insertItem({
+      await mdb.insertItem({
         collectionName: 'users',
         item: {
           _id: '123',
@@ -294,11 +291,6 @@ describe('Auth routes', () => {
       await mdb.createCollection({ collectionName: 'users' });
     });
 
-    afterAll(async () => {
-      jest.restoreMock('../../../lib/bcryptHelpers');
-      await mdb.closeMongoConnection();
-    });
-
     it('should successfully return the current user', async () => {
       const token = await jwt.sign({ email: 'test1@test.com' }, config.secret);
       const [header, payload, signature] = token.split('.');
@@ -310,15 +302,60 @@ describe('Auth routes', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toEqual({
         user: {
-          _id: '123',
-          email: 'test1@test.com',
-          password: 'password'
+          id: '123',
+          email: 'test1@test.com'
         }
       });
     });
   });
 
-  // describe('verifyPassword', () => {
-  //   it('should successfully verify the users password', () => {});
-  // });
+  describe('changePassword', () => {
+    let hash;
+    beforeEach(async () => {
+      try {
+        await mdb.init(connectionString, database);
+
+        const salt = await bcrypt.genSalt(10);
+        hash = await bcrypt.hash('password', salt);
+
+        await mdb.insertItem({
+          collectionName: 'users',
+          item: {
+            email: 'test1@test.com',
+            password: hash
+          }
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    });
+
+    afterEach(async () => {
+      try {
+        await mdb.dropDB({ collectionName: 'users' });
+        await mdb.createCollection({ collectionName: 'users' });
+      } catch (e) {
+        console.error(error);
+      }
+    });
+
+    it('should successfully change the users password', async () => {
+      const token = await jwt.sign({ email: 'test1@test.com' }, config.secret);
+      const [header, payload, signature] = token.split('.');
+
+      const res = await supertest(app)
+        .post('/auth/changePassword')
+        .send({
+          email: 'test1@test.com',
+          password: 'password',
+          newPassword: 'password2',
+          newPasswordConfirm: 'password2'
+        })
+        .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
+
+      // console.log(res.error); // useful!!
+      expect(res.body).toEqual({ message: 'Success' });
+      expect(res.statusCode).toBe(200);
+    });
+  });
 });

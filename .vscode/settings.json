@@ -1,4 +1,9 @@
 {
-  "editor.formatOnSave": true,
-  "emmet.showSuggestionsAsSnippets": true
+    "typescript.tsdk": "./node_modules/typescript/lib",
+    "eslint.enable": true,
+   // Run the linter on save (onSave) or on type (onType)
+    "eslint.run": "onType",
+    "files.associations": {
+      "*.eslintrc": "jsonc"
+    }
 }
