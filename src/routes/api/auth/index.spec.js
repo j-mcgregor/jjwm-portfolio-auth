@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 import supertest from 'supertest';
-import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import app from '../../../api/app';
 import config from '../../../config';
 import * as mdb from '../../../lib/mongoDB';
 import hashPassword from '../../../lib/bcryptHelpers';
+import log from '../../../lib/logger';
 
 // This is coming from @shelf/jest-mongodb
 const connectionString = global.__MONGO_URI__;
@@ -16,8 +16,10 @@ jest.mock('../../../lib/bcryptHelpers');
 
 describe('Auth routes', () => {
   describe('Login', () => {
+    let appInit;
     beforeEach(async () => {
       await mdb.init(connectionString, database);
+      appInit = app();
 
       const salt = await bcrypt.genSalt(10);
       const hash = await bcrypt.hash('password', salt);
@@ -42,7 +44,7 @@ describe('Auth routes', () => {
     });
 
     it('should succesfully login a user', async () => {
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .post('/auth/login')
         .send({
           email: 'test1@test.com',
@@ -61,7 +63,7 @@ describe('Auth routes', () => {
     });
 
     it('should return an error message if either email or password missing', async () => {
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .post('/auth/login')
         .send({
           email: '',
@@ -75,7 +77,7 @@ describe('Auth routes', () => {
     });
 
     it('should reject if user not found', async () => {
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .post('/auth/login')
         .send({
           email: 'noUser@test.com',
@@ -87,7 +89,7 @@ describe('Auth routes', () => {
     });
 
     it('should reject if password incorrect', async () => {
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .post('/auth/login')
         .send({
           email: 'test1@test.com',
@@ -103,9 +105,11 @@ describe('Auth routes', () => {
 
   describe('Register', () => {
     let newUser;
+    let appInit;
 
     beforeEach(async () => {
       await mdb.init(connectionString, database);
+      appInit = app();
 
       const salt = await bcrypt.genSalt(10);
       const hash = await bcrypt.hash('password', salt);
@@ -135,7 +139,7 @@ describe('Auth routes', () => {
     it('should register a user', async () => {
       hashPassword.mockReturnValue('password');
 
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .post('/auth/register')
         .send(newUser);
 
@@ -148,7 +152,7 @@ describe('Auth routes', () => {
         const obj = newUser;
         obj[key] = '';
 
-        const res = await supertest(app)
+        const res = await supertest(appInit)
           .post('/auth/register')
           .send(obj);
 
@@ -166,7 +170,7 @@ describe('Auth routes', () => {
       ];
 
       objs.forEach(async obj => {
-        const res = await supertest(app)
+        const res = await supertest(appInit)
           .post('/auth/register')
           .send(obj);
 
@@ -179,7 +183,7 @@ describe('Auth routes', () => {
 
     it('should return an error if the user already exists', async () => {
       newUser.email = 'test1@test.com';
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .post('/auth/register')
         .send(newUser);
 
@@ -193,7 +197,7 @@ describe('Auth routes', () => {
       newUser.email = 'newEmail@test.com';
       hashPassword.mockReturnValue(null);
 
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .post('/auth/register')
         .send(newUser);
 
@@ -208,7 +212,7 @@ describe('Auth routes', () => {
       mdb.insertItem = jest.fn().mockReturnValueOnce(false);
       hashPassword.mockReturnValue(true);
 
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .post('/auth/register')
         .send(newUser);
 
@@ -223,11 +227,18 @@ describe('Auth routes', () => {
   });
 
   describe('verifyUser', () => {
+    let appInit;
+
+    beforeEach(async () => {
+      await mdb.init(connectionString, database);
+      appInit = app();
+    });
+
     it('should return isAuthenticated=true if valid', async () => {
       const token = await jwt.sign({ message: 'Test' }, config.secret);
       const [header, payload, signature] = token.split('.');
 
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .get('/auth/verifyUser')
         .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
 
@@ -239,7 +250,7 @@ describe('Auth routes', () => {
       const token = await jwt.sign({ message: 'Test' }, config.secret);
       const [header, _, signature] = token.split('.');
 
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .get('/auth/verifyUser')
         .set('Cookie', `COOKIE_1=${header}.broken;COOKIE_2=${signature}`);
 
@@ -248,7 +259,7 @@ describe('Auth routes', () => {
     });
 
     it('should return Error if no cookies', async () => {
-      const res = await supertest(app).get('/auth/verifyUser');
+      const res = await supertest(appInit).get('/auth/verifyUser');
 
       expect(res.body).toEqual({ error: 'Missing cookies' });
       expect(res.statusCode).toBe(401);
@@ -256,11 +267,18 @@ describe('Auth routes', () => {
   });
 
   describe('logout', () => {
+    let appInit;
+
+    beforeEach(async () => {
+      await mdb.init(connectionString, database);
+      appInit = app();
+    });
+
     it('should successfully logout and reset the cookies ', async () => {
       const token = await jwt.sign({ message: 'Test' }, config.secret);
       const [header, payload, signature] = token.split('.');
 
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .get('/auth/logout')
         .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
 
@@ -274,8 +292,10 @@ describe('Auth routes', () => {
   });
 
   describe('currentUser', () => {
+    let appInit;
     beforeEach(async () => {
       await mdb.init(connectionString, database);
+      appInit = app();
 
       await mdb.insertItem({
         collectionName: 'users',
@@ -296,7 +316,7 @@ describe('Auth routes', () => {
       const token = await jwt.sign({ email: 'test1@test.com' }, config.secret);
       const [header, payload, signature] = token.split('.');
 
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .get('/auth/currentUser')
         .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
 
@@ -312,9 +332,11 @@ describe('Auth routes', () => {
 
   describe('changePassword', () => {
     let hash;
+    let appInit;
     beforeEach(async () => {
       try {
         await mdb.init(connectionString, database);
+        appInit = app();
 
         const salt = await bcrypt.genSalt(10);
         hash = await bcrypt.hash('password', salt);
@@ -327,7 +349,7 @@ describe('Auth routes', () => {
           }
         });
       } catch (e) {
-        console.error(e);
+        log.err(e);
       }
     });
 
@@ -336,7 +358,7 @@ describe('Auth routes', () => {
         await mdb.dropDB({ collectionName: 'users' });
         await mdb.createCollection({ collectionName: 'users' });
       } catch (e) {
-        console.error(e);
+        log.err(e);
       }
     });
 
@@ -344,7 +366,7 @@ describe('Auth routes', () => {
       const token = await jwt.sign({ email: 'test1@test.com' }, config.secret);
       const [header, payload, signature] = token.split('.');
 
-      const res = await supertest(app)
+      const res = await supertest(appInit)
         .post('/auth/changePassword')
         .send({
           email: 'test1@test.com',

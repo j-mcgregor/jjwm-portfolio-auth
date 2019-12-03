@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import config from '../config';
 import User from '../src/models/User';
+import log from '../src/lib/logger';
 
 mongoose.Promise = require('bluebird');
 
@@ -29,13 +30,13 @@ async function seedUser() {
   }
 
   await User.create(users)
-    .then(users => console.log(`${users.length} users created`))
-    .catch(err => console.log(err))
+    .then(users => log.log(`${users.length} users created`))
+    .catch(err => log.err(err))
     .finally(() => mongoose.connection.close());
 }
 
 async function init() {
-  console.log('Seeding users...');
+  log.info('Seeding users...');
   await seedUser();
 }
 

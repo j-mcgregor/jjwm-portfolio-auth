@@ -1,5 +1,6 @@
 import { MongoClient, ObjectId, ObjectID } from 'mongodb';
 import { mongoOptions } from '../config/index';
+import log from './logger';
 
 ObjectId.prototype.valueOf = function() {
   return this.toString();
@@ -34,15 +35,26 @@ export const init = async (
       ? connectionUrl
       : `${connectionUrl}/${dbName}`;
 
+  const err = null;
   const fn = () => MongoClient.connect(uri, mongoOptions); // return Promise
-  return retry({ fn, retryDelay: 100, retryCount: 3, onError: () => {} }).then(
-    connection => {
-      if (!connection) throw new Error('no mongo connection set');
-      mongoConnection.connection = connection;
-      mongoConnection.db = connection.db(dbName);
-      return mongoConnection;
-    }
-  );
+  try {
+    const connection = await retry({
+      fn,
+      retryDelay: 100,
+      retryCount: 3,
+      err,
+      onError: () => {}
+    });
+
+    if (!connection) throw new Error('no mongo connection set');
+
+    mongoConnection.connection = connection;
+    mongoConnection.db = connection.db(dbName);
+
+    return mongoConnection;
+  } catch (e) {
+    log.trace(e, true);
+  }
 };
 
 export const insertItem = ({ collectionName, item }) => {
