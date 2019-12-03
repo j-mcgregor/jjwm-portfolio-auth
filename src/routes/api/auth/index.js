@@ -1,51 +1,46 @@
 import express from 'express';
-import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import config from '../../../config';
 import User from '../../../models/User';
-import {
-  getItem,
-  getItems,
-  insertItem,
-  updateItem
-} from '../../../lib/mongoDB';
+import { getItem, insertItem, updateItem } from '../../../lib/mongoDB';
 import authMiddleware from '../../../lib/authMiddleware';
 import hashPassword from '../../../lib/bcryptHelpers';
+import log from '../../../lib/logger';
+
+const sendError = (next, res, key, message, status) => {
+  next(message);
+  res.status(status).json({ errors: { [key]: message } });
+};
 
 const router = express.Router();
-
-const sendResponse = (fn, key, message, status) => {
-  return fn.status(status).json({ errors: { [key]: message } });
-};
 /**
  @route    POST /auth/login
  @desc     Login in a User
  @access   Public
  */
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return sendResponse(
-      res,
-      'missingFields',
-      'Please include an email and password',
-      422
-    );
-  }
 
   try {
+    if (!email || !password)
+      throw {
+        key: 'missing_fields',
+        message: 'Please include an email and password'
+      };
+
     const user = await getItem({
       collectionName: 'users',
       key: 'email',
       value: email
     });
-    if (!user) throw 'User not found';
+
+    if (!user) throw { key: 'email', message: 'User not found' };
 
     try {
       const match = await bcrypt.compare(password, user.password);
-      if (!match) throw 'Wrong password amigo!';
+      if (!match) throw { key: 'password', message: 'Wrong password amigo!' };
 
       const body = {
         id: user.id,
@@ -56,6 +51,8 @@ router.post('/login', async (req, res) => {
       };
 
       const token = await jwt.sign(body, config.secret, { expiresIn: 3600 });
+      if (!token)
+        throw { key: 'token_error', message: 'Error signing the token' };
 
       const [header, payload, signature] = token.split('.');
 
@@ -68,10 +65,10 @@ router.post('/login', async (req, res) => {
       const resUser = { email: user.email, id: user._id };
       res.status(200).json({ user: resUser, token, auth: true });
     } catch (e) {
-      return sendResponse(res, 'password', 'Wrong password amigo!', 400);
+      sendError(next, res, e.key, e.message, 400);
     }
-  } catch (error) {
-    return sendResponse(res, 'email', error, 400);
+  } catch (e) {
+    sendError(next, res, e.key, e.message, 400);
   }
 });
 
@@ -81,24 +78,22 @@ router.post('/login', async (req, res) => {
  @access   Public
  */
 
-router.post('/register', async (req, res) => {
+router.post('/register', async (req, res, next) => {
   const { firstName, lastName, email, password, password2 } = req.body;
 
-  if (!firstName || !lastName || !email || !password || !password2) {
-    return sendResponse(res, 'missingFields', 'Some fields are missing', 400);
-  }
-  if (password !== password2) {
-    return sendResponse(res, 'password', "Passwords don't match", 400);
-  }
-
   try {
+    if (!firstName || !lastName || !email || !password || !password2)
+      throw { key: 'missing_fields', message: 'Some fields are missing' };
+    if (password !== password2)
+      throw { key: 'password', message: 'Passwords dont match' };
+
     const user = await getItem({
       collectionName: 'users',
       key: 'email',
       value: email
     });
 
-    if (user) throw { field: 'email', message: 'Email already exists' };
+    if (user) throw { key: 'email', message: 'Email already exists' };
 
     const newUser = new User({
       firstName,
@@ -107,28 +102,38 @@ router.post('/register', async (req, res) => {
       password
     });
 
-    const salt = await bcrypt.genSalt(10);
-
     try {
+      const salt = await bcrypt.genSalt(10);
       const hash = await hashPassword(newUser.password, salt);
-      if (!hash) throw 'Something went wrong while hashing the password';
-      newUser.password = hash;
-    } catch (error) {
-      return sendResponse(res, 'bcrypt', error, 500);
-    }
+      if (!hash || !salt)
+        throw {
+          key: 'bcrypt',
+          message: 'Something went wrong while hashing the password'
+        };
 
-    try {
-      const userSaved = await insertItem({
-        collectionName: 'users',
-        item: newUser
-      });
-      if (!userSaved) throw 'Something went wrong while saving the user';
-      return res.status(200).json({ message: 'Success' });
-    } catch (error) {
-      return sendResponse(res, 'saveUserError', error, 500);
+      newUser.password = hash;
+
+      try {
+        const userSaved = await insertItem({
+          collectionName: 'users',
+          item: newUser
+        });
+
+        if (!userSaved)
+          throw {
+            key: 'save_user_error',
+            message: 'Something went wrong while saving the user'
+          };
+
+        return res.status(200).json({ message: 'Success' });
+      } catch (e) {
+        sendError(next, res, e.key, e.message, 500);
+      }
+    } catch (e) {
+      sendError(next, res, e.key, e.message, 500);
     }
   } catch (e) {
-    return sendResponse(res, e.field, e.message, 400);
+    sendError(next, res, e.key, e.message, 400);
   }
 });
 
@@ -161,24 +166,27 @@ router.get('/logout', (req, res) => {
  @access   Private
  */
 
-router.get('/currentUser', authMiddleware, async (req, res) => {
+router.get('/currentUser', authMiddleware, async (req, res, next) => {
   const { email } = req.user;
 
   try {
-    const u = await getItem({
+    const user = await getItem({
       collectionName: 'users',
       key: 'email',
       value: email
     });
 
-    const user = {
-      email: u.email,
-      id: u._id
+    if (!user)
+      throw { key: 'email', message: 'Couldnt find a user with that email' };
+
+    const u = {
+      email: user.email,
+      id: user._id
     };
 
-    return res.status(200).json({ user });
+    return res.status(200).json({ user: u });
   } catch (e) {
-    return sendResponse(res, 'currentUser', 'Something went wrong', 400);
+    sendError(next, res, e.key, e.message, 400);
   }
 });
 
@@ -188,44 +196,58 @@ router.get('/currentUser', authMiddleware, async (req, res) => {
  @access   Private
  */
 
-router.post('/changePassword', authMiddleware, async (req, res) => {
+router.post('/changePassword', authMiddleware, async (req, res, next) => {
   const { email, password, newPassword, newPasswordConfirm } = req.body;
 
   try {
+    if (newPassword !== newPasswordConfirm)
+      throw { key: 'password', message: 'Passwords dont match' };
+
     const user = await getItem({
       collectionName: 'users',
       key: 'email',
       value: email
     });
 
+    if (!user)
+      throw { key: 'email', message: 'Couldnt find a user with that email' };
+
     try {
       const match = await bcrypt.compare(password, user.password);
-
-      if (!match) throw new Error('You must enter your current password');
-      if (newPassword !== newPasswordConfirm)
-        throw new Error('Passwords dont match');
+      if (!match) throw 'You must enter your current password';
 
       try {
         const salt = await bcrypt.genSalt(10);
         const hash = await bcrypt.hash(newPassword, salt);
-        if (!hash) throw new Error('Couldnt find a user with that email');
+        if (!hash || !salt)
+          throw {
+            key: 'hasing_error',
+            message: 'Something went wrong while hashing the password'
+          };
+
         user.password = hash;
 
-        await updateItem({
+        const updateSuccess = await updateItem({
           collectionName: 'users',
           email,
           value: user
         });
 
+        if (!updateSuccess)
+          throw {
+            key: 'save_error',
+            message: 'Something went wrong while saving the user'
+          };
+
         return res.status(200).json({ message: 'Success' });
       } catch (e) {
-        return sendResponse(res, 'hashPassword', e, 400);
+        sendError(next, res, e.key, e.message, 500);
       }
     } catch (e) {
-      return sendResponse(res, 'changePassword', e, 400);
+      sendError(next, res, e.key, e.message, 500);
     }
   } catch (e) {
-    return sendResponse(res, 'noEmail', e, 400);
+    sendError(next, res, e.key, e.message, 500);
   }
 });
 

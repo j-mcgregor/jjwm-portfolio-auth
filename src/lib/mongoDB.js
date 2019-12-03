@@ -74,7 +74,6 @@ export const getItems = ({ collectionName }) => {
 
 export const updateItem = ({ collectionName, id, value }) => {
   const collection = mongoConnection.db.collection(collectionName);
-
   return collection.updateOne(
     { _id: new ObjectID(id) },
     { $set: { value } },
