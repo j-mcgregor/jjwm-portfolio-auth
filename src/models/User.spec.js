@@ -1,29 +1,48 @@
 /* eslint-disable no-console */
 import mongoose from 'mongoose';
-import * as mdb from '../lib/mongoDB';
+import {
+  init,
+  insertItem,
+  closeMongoConnection,
+  dropDB,
+  createCollection
+} from '../lib/mongoDB';
 import User from './User';
+import log from '../lib/logger';
 
 const connectionString = global.__MONGO_URI__;
 const database = 'test';
 
 describe('User Model Test', () => {
   beforeAll(async () => {
-    await mdb.init(connectionString, database);
+    try {
+      await init(connectionString, database);
+    } catch (e) {
+      log.err(e.message);
+    }
   });
 
   afterEach(async () => {
-    await mdb.dropDB({ collectionName: 'users' });
-    await mdb.createCollection({ collectionName: 'users' });
+    try {
+      await dropDB({ collectionName: 'users' });
+    } catch (e) {
+      log.err(e.message);
+    }
+    await createCollection({ collectionName: 'users' });
   });
 
   afterAll(async () => {
-    await mdb.closeMongoConnection();
+    try {
+      await closeMongoConnection();
+    } catch (e) {
+      log.err(e, true);
+    }
   });
 
   it('should insert a doc into collection', async () => {
     const mockUser = { _id: 'some-user-id', name: 'John' };
 
-    const insertedUser = await mdb.insertItem({
+    const insertedUser = await insertItem({
       collectionName: 'users',
       item: mockUser
     });
@@ -41,7 +60,7 @@ describe('User Model Test', () => {
 
     const validUser = new User(userData);
 
-    const savedUser = await mdb.insertItem({
+    const savedUser = await insertItem({
       collectionName: 'users',
       item: validUser
     });
@@ -51,6 +70,7 @@ describe('User Model Test', () => {
     expect(savedUser.ops[0].lastName).toBe(userData.lastName);
     expect(savedUser.ops[0].email).toBe(userData.email);
   });
+
   it('insert user successfully, but the field does not defined in schema should be undefined', async () => {
     const userWithInvalidField = new User({
       firstName: 'Baloo',
@@ -59,7 +79,7 @@ describe('User Model Test', () => {
       nickname: 'Handsome TekLoon'
     });
 
-    const savedUser = await mdb.insertItem({
+    const savedUser = await insertItem({
       collectionName: 'users',
       item: userWithInvalidField
     });
@@ -68,8 +88,9 @@ describe('User Model Test', () => {
     expect(savedUser.ops[0].nickkname).toBeUndefined();
   });
 
-  it('create user without required field should failed', () => {
+  it('create user without required field should failed', async () => {
     const userWithoutRequiredField = new User({ firstName: 'TekLoon' });
+
     userWithoutRequiredField
       .save()
       .then(user => user)

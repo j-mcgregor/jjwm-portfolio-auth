@@ -1,9 +1,15 @@
 import express from 'express';
+import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import config from '../../../config';
 import User from '../../../models/User';
-import { getItem, insertItem } from '../../../lib/mongoDB';
+import {
+  getItem,
+  getItems,
+  insertItem,
+  updateItem
+} from '../../../lib/mongoDB';
 import authMiddleware from '../../../lib/authMiddleware';
 import hashPassword from '../../../lib/bcryptHelpers';
 
@@ -61,7 +67,7 @@ router.post('/login', async (req, res) => {
 
       const resUser = { email: user.email, id: user._id };
       res.status(200).json({ user: resUser, token, auth: true });
-    } catch (error) {
+    } catch (e) {
       return sendResponse(res, 'password', 'Wrong password amigo!', 400);
     }
   } catch (error) {
@@ -132,8 +138,8 @@ router.post('/register', async (req, res) => {
  @access   Private
  */
 
-router.get('/verifyUser', authMiddleware, (req, res, next) => {
-  res.json({ isAuthenticated: true });
+router.get('/verifyUser', authMiddleware, (req, res) => {
+  return res.status(200).json({ isAuthenticated: true });
 });
 
 /**
@@ -142,11 +148,11 @@ router.get('/verifyUser', authMiddleware, (req, res, next) => {
  @access   Public
  */
 
-router.get('/logout', (req, res, next) => {
+router.get('/logout', (req, res) => {
   res.cookie('COOKIE_1', '');
   res.cookie('COOKIE_2', '');
 
-  res.json({ loggedOut: true, isAuthenticated: false });
+  return res.status(200).json({ loggedOut: true, isAuthenticated: false });
 });
 
 /**
@@ -159,48 +165,67 @@ router.get('/currentUser', authMiddleware, async (req, res) => {
   const { email } = req.user;
 
   try {
-    const user = await User.findOne({ email });
-    res.json({ user });
-  } catch (error) {
-    res.json({ error });
+    const u = await getItem({
+      collectionName: 'users',
+      key: 'email',
+      value: email
+    });
+
+    const user = {
+      email: u.email,
+      id: u._id
+    };
+
+    return res.status(200).json({ user });
+  } catch (e) {
+    return sendResponse(res, 'currentUser', 'Something went wrong', 400);
   }
 });
 
 /**
- @route    GET /auth/verifyPassword
+ @route    GET /auth/changePassword
  @desc     Verify the password for the option of changing password
  @access   Private
  */
 
-router.post('/verifyPassword', authMiddleware, async (req, res) => {
+router.post('/changePassword', authMiddleware, async (req, res) => {
   const { email, password, newPassword, newPasswordConfirm } = req.body;
-  const errors = {};
-
-  const user = await User.findOne({ email });
-  const match = await bcrypt.compare(password, user.password);
-
-  if (!match) {
-    errors.wrongPassword = 'You must enter your current password';
-  }
-
-  if (newPassword !== newPasswordConfirm) {
-    errors.password = "Passwords don't match";
-  }
-
-  const salt = await bcrypt.genSalt(10);
 
   try {
-    const hash = await bcrypt.hash(newPassword, salt);
-    user.password = hash;
-    user.save();
-  } catch (e) {
-    res.json(e);
-  }
+    const user = await getItem({
+      collectionName: 'users',
+      key: 'email',
+      value: email
+    });
 
-  if (Object.keys(errors).length > 0) {
-    return res.status(400).json({ errors });
-  } else {
-    return res.status(201).json({ message: 'Success' });
+    try {
+      const match = await bcrypt.compare(password, user.password);
+
+      if (!match) throw new Error('You must enter your current password');
+      if (newPassword !== newPasswordConfirm)
+        throw new Error('Passwords dont match');
+
+      try {
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(newPassword, salt);
+        if (!hash) throw new Error('Couldnt find a user with that email');
+        user.password = hash;
+
+        await updateItem({
+          collectionName: 'users',
+          email,
+          value: user
+        });
+
+        return res.status(200).json({ message: 'Success' });
+      } catch (e) {
+        return sendResponse(res, 'hashPassword', e, 400);
+      }
+    } catch (e) {
+      return sendResponse(res, 'changePassword', e, 400);
+    }
+  } catch (e) {
+    return sendResponse(res, 'noEmail', e, 400);
   }
 });
 

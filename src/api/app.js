@@ -11,36 +11,42 @@ import config from '../config';
 import passportConfig from '../config/passport';
 import base from '../routes/api/root';
 import auth from '../routes/api/auth';
+import log from '../lib/logger';
 
 const { sessionSecret, sessionMap, corsOptions } = config;
 
-const env = process.env.NODE_ENV !== 'test';
-const log = message => env && console.log(message);
+const defaultOptions = { useLogger: false, useMorgan: false };
 
-const app = express();
-app.use(logger('dev'));
+const appInit = ({ useLogger, useMorgan } = defaultOptions) => {
+  const app = express();
 
-app.use(helmet());
-log('Middleware added: helmet');
+  if (useMorgan) app.use(logger('dev'));
 
-app.use(cookieParser());
-log('Middleware added: cookie-parser');
+  app.use(helmet());
+  log.info('Middleware added: helmet', useLogger);
 
-app.use(cors(corsOptions));
-log('Middleware added: cookie');
+  app.use(cookieParser());
+  log.info('Middleware added: cookie-parser', useLogger);
 
-app.use(session(sessionMap(sessionSecret)));
-log('Middleware added: express-session');
+  app.use(cors(corsOptions));
+  log.info('Middleware added: cookie', useLogger);
 
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-log('Middleware added: body-parser');
+  app.use(session(sessionMap(sessionSecret)));
+  log.info('Middleware added: express-session', useLogger);
 
-app.use(passport.initialize());
-log('Middleware added: passport');
-passportConfig(passport);
+  app.use(bodyParser.urlencoded({ extended: false }));
+  app.use(bodyParser.json());
+  log.info('Middleware added: body-parser', useLogger);
 
-app.use('/', base);
-app.use('/auth', auth);
+  app.use(passport.initialize());
+  log.info('Middleware added: passport', useLogger);
+  passportConfig(passport);
 
-export default app;
+  app.use('/', base);
+  app.use('/auth', auth);
+  log.info('Routes added', useLogger);
+
+  return app;
+};
+
+export default appInit;
