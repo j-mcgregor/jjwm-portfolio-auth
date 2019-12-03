@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import app from '../../../api/app';
 import config from '../../../config';
 import * as mdb from '../../../lib/mongoDB';
+import { generateToken } from '../../../lib/jwtHelpers';
 import hashPassword from '../../../lib/bcryptHelpers';
 import log from '../../../lib/logger';
 
@@ -320,8 +321,7 @@ describe('Auth routes', () => {
     });
 
     it('should successfully return the current user', async () => {
-      const token = await jwt.sign({ email: 'test1@test.com' }, config.secret);
-      const [header, payload, signature] = token.split('.');
+      const [header, payload, signature] = await generateToken();
 
       const res = await supertest(appInit)
         .get('/auth/currentUser')
@@ -370,8 +370,7 @@ describe('Auth routes', () => {
     });
 
     it('should successfully change the users password', async () => {
-      const token = await jwt.sign({ email: 'test1@test.com' }, config.secret);
-      const [header, payload, signature] = token.split('.');
+      const [header, payload, signature] = await generateToken();
 
       const res = await supertest(appInit)
         .post('/auth/changePassword')
@@ -385,6 +384,86 @@ describe('Auth routes', () => {
 
       expect(res.body).toEqual({ message: 'Success' });
       expect(res.statusCode).toBe(200);
+    });
+
+    it('should fail if passwords dont match', async () => {
+      const [header, payload, signature] = await generateToken();
+
+      const res = await supertest(appInit)
+        .post('/auth/changePassword')
+        .send({
+          email: 'testxxx@test.com',
+          password: 'password',
+          newPassword: 'password11111',
+          newPasswordConfirm: 'password2222222'
+        })
+        .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
+
+      expect(res.body).toEqual({
+        errors: { password: 'Passwords dont match' }
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('should fail if it cant find a user', async () => {
+      const [header, payload, signature] = await generateToken();
+
+      const res = await supertest(appInit)
+        .post('/auth/changePassword')
+        .send({
+          email: 'testxxx@test.com',
+          password: 'password',
+          newPassword: 'password2',
+          newPasswordConfirm: 'password2'
+        })
+        .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
+
+      expect(res.body).toEqual({
+        errors: { email: 'Couldnt find a user with that email' }
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('should fail if the current password is incorrect', async () => {
+      const [header, payload, signature] = await generateToken();
+
+      const res = await supertest(appInit)
+        .post('/auth/changePassword')
+        .send({
+          email: 'test1@test.com',
+          password: 'incorrect_password',
+          newPassword: 'password',
+          newPasswordConfirm: 'password'
+        })
+        .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
+
+      expect(res.body).toEqual({
+        errors: { password: 'You must enter your current password' }
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('should fail if it cant hash the password', async () => {
+      const [header, payload, signature] = await generateToken();
+
+      hashPassword.mockReturnValue(null);
+
+      const res = await supertest(appInit)
+        .post('/auth/changePassword')
+        .send({
+          email: 'test1@test.com',
+          password: 'password',
+          newPassword: 'password2',
+          newPasswordConfirm: 'password2'
+        })
+        .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
+
+      expect(res.body).toEqual({
+        errors: {
+          hashing_error: 'Something went wrong while hashing the password'
+        }
+      });
+      expect(res.statusCode).toBe(500);
     });
   });
 });

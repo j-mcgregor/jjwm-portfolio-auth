@@ -6,7 +6,6 @@ import User from '../../../models/User';
 import { getItem, insertItem, updateItem } from '../../../lib/mongoDB';
 import authMiddleware from '../../../lib/authMiddleware';
 import hashPassword from '../../../lib/bcryptHelpers';
-import log from '../../../lib/logger';
 
 const sendError = (next, res, key, message, status) => {
   next(message);
@@ -214,14 +213,19 @@ router.post('/changePassword', authMiddleware, async (req, res, next) => {
 
     try {
       const match = await bcrypt.compare(password, user.password);
-      if (!match) throw 'You must enter your current password';
+      if (!match)
+        throw {
+          key: 'password',
+          message: 'You must enter your current password'
+        };
 
       try {
         const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash(newPassword, salt);
+        const hash = await hashPassword(newPassword, salt);
+
         if (!hash || !salt)
           throw {
-            key: 'hasing_error',
+            key: 'hashing_error',
             message: 'Something went wrong while hashing the password'
           };
 
@@ -244,10 +248,10 @@ router.post('/changePassword', authMiddleware, async (req, res, next) => {
         sendError(next, res, e.key, e.message, 500);
       }
     } catch (e) {
-      sendError(next, res, e.key, e.message, 500);
+      sendError(next, res, e.key, e.message, 400);
     }
   } catch (e) {
-    sendError(next, res, e.key, e.message, 500);
+    sendError(next, res, e.key, e.message, 400);
   }
 });
 
