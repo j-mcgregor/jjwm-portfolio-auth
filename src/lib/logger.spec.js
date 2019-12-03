@@ -5,7 +5,8 @@ global.console = {
   log: jest.fn(),
   info: jest.fn(),
   error: jest.fn(),
-  warn: jest.fn()
+  warn: jest.fn(),
+  trace: jest.fn()
 };
 
 describe('Logger', () => {
@@ -32,6 +33,13 @@ describe('Logger', () => {
     log.warn('warn message', true);
     expect(global.console.warn).toHaveBeenCalledWith(
       chalk.yellow('warn message')
+    );
+  });
+
+  it('should warn if arg is trace', () => {
+    log.trace('trace message', true);
+    expect(global.console.trace).toHaveBeenCalledWith(
+      chalk.magenta('trace message')
     );
   });
 });

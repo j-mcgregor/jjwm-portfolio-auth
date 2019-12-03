@@ -15,18 +15,18 @@ router.get('/', (req, res) =>
       },
       {
         router: 'http://localhost:4000/auth/verifyUser',
-        method: 'POST'
-      },
-      {
-        router: 'http://localhost:4000/auth/changePassword',
-        method: 'POST'
+        method: 'GET'
       },
       {
         router: 'http://localhost:4000/auth/logout',
-        method: 'POST'
+        method: 'GET'
       },
       {
         router: 'http://localhost:4000/auth/currentUser',
+        method: 'GET'
+      },
+      {
+        router: 'http://localhost:4000/auth/changePassword',
         method: 'POST'
       }
     ]
