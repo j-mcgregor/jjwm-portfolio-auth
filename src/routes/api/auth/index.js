@@ -20,7 +20,7 @@ const router = express.Router();
  */
 
 router.post('/login', async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email = '', password = '' } = req.body;
 
   try {
     if (!email || !password)
@@ -196,7 +196,12 @@ router.get('/currentUser', authMiddleware, async (req, res, next) => {
  */
 
 router.post('/changePassword', authMiddleware, async (req, res, next) => {
-  const { email, password, newPassword, newPasswordConfirm } = req.body;
+  const {
+    email = '',
+    password = '',
+    newPassword = '',
+    newPasswordConfirm = ''
+  } = req.body;
 
   try {
     if (newPassword !== newPasswordConfirm)
