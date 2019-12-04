@@ -1,3 +1,4 @@
+/* eslint-disable implicit-arrow-linebreak */
 import { Router } from 'express';
 
 const router = Router();
@@ -30,7 +31,6 @@ router.get('/', (req, res) =>
         method: 'POST'
       }
     ]
-  })
-);
+  }));
 
 export default router;

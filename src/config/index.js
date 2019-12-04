@@ -4,9 +4,9 @@ module.exports = {
   PORT: parseInt(process.env.PORT, 10),
   MONGODB_URI: process.env.MONGODB_URI,
   MONGODB_NAME: process.env.MONGODB_NAME,
-  secret: process.env.SECRET,
-  sessionSecret: process.env.SESSION_SECRET,
-  sessionMap: pass => ({
+  SECRET: process.env.NODE_ENV === 'test' ? 'secret' : process.env.SECRET,
+  SESSION_SECRET: process.env.SESSION_SECRET,
+  sessionOptions: pass => ({
     secret: pass,
     cookie: {
       secure: true,
