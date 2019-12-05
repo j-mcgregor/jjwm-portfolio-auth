@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 /* eslint-disable object-curly-newline */
 /* eslint-disable implicit-arrow-linebreak */
 import { MongoClient, ObjectID } from 'mongodb';
