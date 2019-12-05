@@ -3,7 +3,7 @@ import authMiddleware from './authMiddleware';
 
 jest.mock('jsonwebtoken');
 
-const mockRequest = data => ({ headers: { ...data } });
+const mockRequest = (data) => ({ headers: { ...data } });
 
 const mockResponse = () => {
   const res = {};
@@ -31,6 +31,18 @@ describe('authMiddleware', () => {
     expect(next).toHaveBeenCalled();
   });
 
+  it('should reject if missing COOKIE_1', () => {
+    const res = mockResponse();
+    const req = mockRequest({
+      cookie: 'COOKIE_2=def;'
+    });
+    const next = jest.fn();
+
+    authMiddleware(req, res, next);
+
+    expect(res.errors).toEqual({ key: 'cookie', message: 'COOKIE_1 missing' });
+  });
+
   it('should reject if missing COOKIE_2', () => {
     const res = mockResponse();
     const req = mockRequest({
@@ -40,7 +52,7 @@ describe('authMiddleware', () => {
 
     authMiddleware(req, res, next);
 
-    expect(res.errors).toEqual({ key: 'cookie', message: 'Missing cookie' });
+    expect(res.errors).toEqual({ key: 'cookie', message: 'COOKIE_2 missing' });
   });
 
   it('should reject if the jwt is malformed', () => {

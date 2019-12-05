@@ -20,7 +20,8 @@ export const generateToken = async () => {
 export const extractJWTFromCookies = ({ cookie }) => {
   try {
     if (!cookie) throw 'Missing the cookie property in the headers';
-
+    if (!cookie.includes('COOKIE_1')) throw 'COOKIE_1 missing';
+    if (!cookie.includes('COOKIE_2')) throw 'COOKIE_2 missing';
     const [COOKIE_1, COOKIE_2] = cookie.split(';');
     if (!COOKIE_1 || !COOKIE_2) {
       throw 'Missing cookie';
