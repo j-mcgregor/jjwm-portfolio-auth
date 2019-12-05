@@ -49,7 +49,6 @@ export default (req, res, next) => {
               err: err.name,
               message: err.message
             };
-            console.log(res.errors);
             return next();
           }
         }

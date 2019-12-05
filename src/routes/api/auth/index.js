@@ -78,7 +78,9 @@ router.post('/login', async (req, res, next) => {
  */
 
 router.post('/register', async (req, res, next) => {
-  const { firstName, lastName, email, password, password2 } = req.body;
+  const {
+ firstName, lastName, email, password, password2 
+} = req.body;
 
   try {
     if (!firstName || !lastName || !email || !password || !password2) {
@@ -176,6 +178,7 @@ router.get('/logout', (req, res) => {
  */
 
 router.get('/currentUser', authMiddleware, async (req, res) => {
+  // console.log(req);
   const { email } = req.user;
 
   try {

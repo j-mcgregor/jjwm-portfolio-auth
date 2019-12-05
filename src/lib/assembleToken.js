@@ -5,6 +5,7 @@ export default (COOKIE_1, COOKIE_2) => {
   if (!header || !payload || !signature) {
     return '';
   }
+  // console.log(`${header}.${payload}.${signature}`);
 
   const token = `${header}.${payload}.${signature}`;
   return token;

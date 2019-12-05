@@ -5,7 +5,7 @@ import config from '../config';
 export const generateToken = async () => {
   try {
     const token = await jwt.sign({ email: 'test1@test.com' }, config.SECRET);
-    return token;
+    return token.split('.');
   } catch (error) {
     return error;
   }

@@ -155,7 +155,7 @@ describe('Auth routes', () => {
     });
 
     it('should return an error if fields are missing', async () => {
-      Object.keys(newUser).forEach(async key => {
+      Object.keys(newUser).forEach(async (key) => {
         const obj = newUser;
         obj[key] = '';
 
@@ -176,7 +176,7 @@ describe('Auth routes', () => {
         { ...newUser, password2: 'wrong_password' }
       ];
 
-      objs.forEach(async obj => {
+      objs.forEach(async (obj) => {
         const res = await supertest(appInit)
           .post('/auth/register')
           .send(obj);
@@ -256,18 +256,18 @@ describe('Auth routes', () => {
     });
 
     it('should return Error if if JWT cookie is invalid', async () => {
-      const token = await jwt.sign({ message: 'Test' }, config.SECRET);
-      const [header, _, signature] = token.split('.');
+      // eslint-disable-next-line no-unused-vars
+      const [header, payload, signature] = await generateToken();
 
       const res = await supertest(appInit)
         .get('/auth/verifyUser')
-        .set('Cookie', `COOKIE_1=${header}.zxz;COOKIE_2=${signature}`);
+        .set('Cookie', `COOKIE_1=${header}.;COOKIE_2=${signature}`);
 
       expect(res.statusCode).toBe(400);
       expect(res.body).toEqual({
         errors: {
           isAuthenticated: false,
-          message: 'invalid token'
+          message: 'Token malformed'
         }
       });
     });
@@ -324,6 +324,7 @@ describe('Auth routes', () => {
         await mdb.insertItem({
           collectionName: 'users',
           item: {
+            _id: '123',
             email: 'test1@test.com',
             password: hash
           }
