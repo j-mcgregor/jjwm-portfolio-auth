@@ -1,3 +1,5 @@
+/* eslint-disable object-curly-newline */
+/* eslint-disable implicit-arrow-linebreak */
 import { MongoClient, ObjectID } from 'mongodb';
 import { mongoOptions } from '../config/index';
 import log from './logger';
@@ -7,23 +9,28 @@ const mongoConnection = {
   db: null
 };
 
-const delay = (retryDelay) => new Promise((resolve) => setTimeout(() => resolve(), retryDelay));
+const delay = (retryDelay) =>
+  new Promise((resolve) => setTimeout(() => resolve(), retryDelay));
 
-const retry = ({
- fn, retryDelay, retryCount, err = null, onError 
-}) => {
+const retry = ({ fn, retryDelay, retryCount, err = null, onError }) => {
   if (!retryCount) {
     return Promise.reject(err);
   }
   return fn().catch((error) => {
     onError(error);
-    return delay(retryDelay).then(() => retry({
- fn, retryCount: retryCount - 1, err: error, onError, retryDelay 
-}));
+    return delay(retryDelay).then(() =>
+      retry({
+        fn,
+        retryCount: retryCount - 1,
+        err: error,
+        onError,
+        retryDelay
+      }));
   });
 };
 
-const getUri = (url, db) => (process.env.NODE_ENV === 'test' ? url : `${url}/${db}`);
+const getUri = (url, db) =>
+  (process.env.NODE_ENV === 'test' ? url : `${url}/${db}`);
 
 export const init = async (
   connectionUrl = 'mongodb://localhost:27017',
@@ -82,7 +89,8 @@ export const dropDB = ({ collectionName }) => {
   return collection.drop();
 };
 
-export const createCollection = ({ collectionName }) => mongoConnection.db.createCollection(collectionName);
+export const createCollection = ({ collectionName }) =>
+  mongoConnection.db.createCollection(collectionName);
 
 // Closes and resets the mongoConnection object
 export const closeMongoConnection = () => {

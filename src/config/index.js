@@ -6,7 +6,7 @@ module.exports = {
   MONGODB_NAME: process.env.MONGODB_NAME,
   SECRET: process.env.NODE_ENV === 'test' ? 'secret' : process.env.SECRET,
   SESSION_SECRET: process.env.SESSION_SECRET,
-  sessionOptions: pass => ({
+  sessionOptions: (pass) => ({
     secret: pass,
     cookie: {
       secure: true,

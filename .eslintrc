@@ -51,6 +51,7 @@
         "packageDir": ["./tools"]
       }
     ],
-    "no-throw-literal": "off"
+    "no-throw-literal": "off",
+    "no-plusplus": "off"
   }
 }

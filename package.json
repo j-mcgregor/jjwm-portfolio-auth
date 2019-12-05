@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "The API for this portfolio",
   "main": "src/index.js",
+  "pre-commit": [
+    "lint"
+  ],
   "scripts": {
     "build": "babel src -d dist --source-maps",
     "eslint": "eslint src/**/*.js --ignore-pattern \"node_modules/\"",

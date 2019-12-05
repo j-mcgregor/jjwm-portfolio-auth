@@ -8,7 +8,6 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import assembleToken from './assembleToken';
 import { extractJWTFromCookies } from './jwtHelpers';
 import config from '../config';
-import sendError from './sendError';
 
 const opts = {
   jwtFromRequest: ExtractJwt.fromHeader(),
