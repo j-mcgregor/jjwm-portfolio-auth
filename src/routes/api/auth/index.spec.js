@@ -1,3 +1,4 @@
+/* eslint-disable import/no-named-as-default */
 /* eslint-disable no-console */
 import supertest from 'supertest';
 import bcrypt from 'bcryptjs';
@@ -154,7 +155,7 @@ describe('Auth routes', () => {
     });
 
     it('should return an error if fields are missing', async () => {
-      Object.keys(newUser).forEach(async key => {
+      Object.keys(newUser).forEach(async (key) => {
         const obj = newUser;
         obj[key] = '';
 
@@ -175,7 +176,7 @@ describe('Auth routes', () => {
         { ...newUser, password2: 'wrong_password' }
       ];
 
-      objs.forEach(async obj => {
+      objs.forEach(async (obj) => {
         const res = await supertest(appInit)
           .post('/auth/register')
           .send(obj);
@@ -214,7 +215,7 @@ describe('Auth routes', () => {
     });
 
     it('should return an error if saving the user fails', async () => {
-      const insertItem = mdb.insertItem;
+      const { insertItem } = mdb;
       mdb.insertItem = jest.fn().mockReturnValueOnce(false);
       hashPassword.mockReturnValue(true);
 
@@ -243,7 +244,7 @@ describe('Auth routes', () => {
     });
 
     it('should return isAuthenticated=true if valid', async () => {
-      const token = await jwt.sign({ message: 'Test' }, config.secret);
+      const token = await jwt.sign({ message: 'Test' }, config.SECRET);
       const [header, payload, signature] = token.split('.');
 
       const res = await supertest(appInit)
@@ -254,23 +255,33 @@ describe('Auth routes', () => {
       expect(res.statusCode).toBe(200);
     });
 
-    it('should return Error if cookie is invalid', async () => {
-      const token = await jwt.sign({ message: 'Test' }, config.secret);
-      const [header, _, signature] = token.split('.');
+    it('should return Error if if JWT cookie is invalid', async () => {
+      // eslint-disable-next-line no-unused-vars
+      const [header, payload, signature] = await generateToken();
 
       const res = await supertest(appInit)
         .get('/auth/verifyUser')
-        .set('Cookie', `COOKIE_1=${header}.broken;COOKIE_2=${signature}`);
+        .set('Cookie', `COOKIE_1=${header}.;COOKIE_2=${signature}`);
 
-      expect(res.body).toEqual({ error: 'Token malformed' });
       expect(res.statusCode).toBe(400);
+      expect(res.body).toEqual({
+        errors: {
+          isAuthenticated: false,
+          message: 'Token malformed'
+        }
+      });
     });
 
     it('should return Error if no cookies', async () => {
       const res = await supertest(appInit).get('/auth/verifyUser');
 
-      expect(res.body).toEqual({ error: 'Missing cookies' });
-      expect(res.statusCode).toBe(401);
+      expect(res.body).toEqual({
+        errors: {
+          isAuthenticated: false,
+          message: 'Missing the cookie property in the headers'
+        }
+      });
+      expect(res.statusCode).toBe(400);
     });
   });
 
@@ -283,7 +294,7 @@ describe('Auth routes', () => {
     });
 
     it('should successfully logout and reset the cookies ', async () => {
-      const token = await jwt.sign({ message: 'Test' }, config.secret);
+      const token = await jwt.sign({ message: 'Test' }, config.SECRET);
       const [header, payload, signature] = token.split('.');
 
       const res = await supertest(appInit)
@@ -300,24 +311,36 @@ describe('Auth routes', () => {
   });
 
   describe('currentUser', () => {
+    let hash;
     let appInit;
     beforeEach(async () => {
-      await mdb.init(connectionString, database);
-      appInit = app();
+      try {
+        await mdb.init(connectionString, database);
+        appInit = app();
 
-      await mdb.insertItem({
-        collectionName: 'users',
-        item: {
-          _id: '123',
-          email: 'test1@test.com',
-          password: 'password'
-        }
-      });
+        const salt = await bcrypt.genSalt(10);
+        hash = await bcrypt.hash('password', salt);
+
+        await mdb.insertItem({
+          collectionName: 'users',
+          item: {
+            _id: '123',
+            email: 'test1@test.com',
+            password: hash
+          }
+        });
+      } catch (e) {
+        log.err(e);
+      }
     });
 
     afterEach(async () => {
-      await mdb.dropDB({ collectionName: 'users' });
-      await mdb.createCollection({ collectionName: 'users' });
+      try {
+        await mdb.dropDB({ collectionName: 'users' });
+        await mdb.createCollection({ collectionName: 'users' });
+      } catch (e) {
+        log.err(e);
+      }
     });
 
     it('should successfully return the current user', async () => {

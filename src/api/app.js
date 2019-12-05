@@ -2,18 +2,16 @@
 import express from 'express';
 import logger from 'morgan';
 import cors from 'cors';
-import passport from 'passport';
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import config from '../config';
-import passportConfig from '../config/passport';
 import base from '../routes/api/root';
 import auth from '../routes/api/auth';
 import log from '../lib/logger';
 
-const { sessionSecret, sessionMap, corsOptions } = config;
+const { SESSION_SECRET, sessionOptions, corsOptions } = config;
 
 const defaultOptions = { useLogger: false, useMorgan: false };
 
@@ -31,16 +29,12 @@ const appInit = ({ useLogger, useMorgan } = defaultOptions) => {
   app.use(cors(corsOptions));
   log.info('Middleware added: cookie', useLogger);
 
-  app.use(session(sessionMap(sessionSecret)));
+  app.use(session(sessionOptions(SESSION_SECRET)));
   log.info('Middleware added: express-session', useLogger);
 
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(bodyParser.json());
   log.info('Middleware added: body-parser', useLogger);
-
-  app.use(passport.initialize());
-  log.info('Middleware added: passport', useLogger);
-  passportConfig(passport);
 
   app.use('/', base);
   app.use('/auth', auth);

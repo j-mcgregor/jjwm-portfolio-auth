@@ -1,40 +1,63 @@
+/* eslint-disable camelcase */
+/* eslint-disable consistent-return */
+/* eslint-disable operator-linebreak */
 /* eslint-disable no-prototype-builtins */
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
-import { assembleToken } from './assembleToken';
+import { Strategy, ExtractJwt } from 'passport-jwt';
+import assembleToken from './assembleToken';
+import { extractJWTFromCookies } from './jwtHelpers';
 import config from '../config';
-import passportConfig from '../config/passport';
 
-passportConfig(passport);
-
-// TO DO - logger
-// TO DO - handleError function
+const opts = {
+  jwtFromRequest: ExtractJwt.fromHeader(),
+  secretOrKey: config.SECRET
+};
 
 export default (req, res, next) => {
-  const { cookies } = req;
+  const { headers } = req;
 
   try {
-    const present =
-      cookies ||
-      cookies.hasOwnProperty('COOKIE_1') ||
-      cookies.hasOwnProperty('COOKIE_2');
+    const jwtCookie = extractJWTFromCookies(headers);
+    if (jwtCookie.errors) throw { key: 'cookie', message: jwtCookie.errors };
 
-    const cookiesHaveValues = cookies.COOKIE_1 && cookies.COOKIE_2;
+    const {
+      data: { COOKIE_1, COOKIE_2 }
+    } = jwtCookie;
 
-    if (!present || !cookiesHaveValues) throw new Error();
+    passport.use(
+      new Strategy(opts, (jwt_payload, done) => {
+        done(jwt_payload);
+      })
+    );
 
     passport.authenticate('jwt', () => {
+      let token;
+
       try {
-        const token = assembleToken(cookies);
-        const decoded = jwt.verify(token, config.secret);
-        if (!decoded) throw new Error();
-        req.user = decoded;
-        next();
+        token = assembleToken(COOKIE_1, COOKIE_2);
+        if (!token) throw { key: 'token', message: 'Token malformed' };
+
+        try {
+          const decoded = jwt.verify(token, config.SECRET);
+          req.user = decoded;
+          return next();
+        } catch (err) {
+          if (err) {
+            res.errors = {
+              err: err.name,
+              message: err.message
+            };
+            return next();
+          }
+        }
       } catch (e) {
-        return res.status(400).json({ error: 'Token malformed' });
+        res.errors = e;
+        return next();
       }
     })(req, res, next);
   } catch (e) {
-    return res.status(401).json({ error: 'Missing cookies' });
+    res.errors = e;
+    return next();
   }
 };

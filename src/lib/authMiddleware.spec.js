@@ -1,14 +1,9 @@
-import authMiddleware from './authMiddleware';
 import * as jwt from 'jsonwebtoken';
+import authMiddleware from './authMiddleware';
 
 jest.mock('jsonwebtoken');
 
-const mockRequest = data => ({
-  ...data,
-  headers: {
-    authorization: 'auth'
-  }
-});
+const mockRequest = (data) => ({ headers: { ...data } });
 
 const mockResponse = () => {
   const res = {};
@@ -24,10 +19,7 @@ describe('authMiddleware', () => {
   it('should test correctly', async () => {
     const res = mockResponse();
     const req = mockRequest({
-      cookies: {
-        COOKIE_1: 'abc.def',
-        COOKIE_2: 'ghi'
-      }
+      cookie: 'COOKIE_1=abc.def;COOKIE_2=ghi'
     });
     const next = jest.fn();
 
@@ -39,37 +31,44 @@ describe('authMiddleware', () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it('should reject if no cookies', () => {
+  it('should reject if missing COOKIE_1', () => {
     const res = mockResponse();
     const req = mockRequest({
-      cookies: {
-        COOKIE_1: 'abc.def',
-        COOKIE_2: ''
-      }
+      cookie: 'COOKIE_2=def;'
     });
     const next = jest.fn();
 
     authMiddleware(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Missing cookies' });
-    expect(next).not.toHaveBeenCalled();
+    expect(res.errors).toEqual({ key: 'cookie', message: 'COOKIE_1 missing' });
+  });
+
+  it('should reject if missing COOKIE_2', () => {
+    const res = mockResponse();
+    const req = mockRequest({
+      cookie: 'COOKIE_1=abc.def;'
+    });
+    const next = jest.fn();
+
+    authMiddleware(req, res, next);
+
+    expect(res.errors).toEqual({ key: 'cookie', message: 'COOKIE_2 missing' });
   });
 
   it('should reject if the jwt is malformed', () => {
     const res = mockResponse();
     const req = mockRequest({
-      cookies: {
-        COOKIE_1: 'abc',
-        COOKIE_2: 'ghi'
-      }
+      cookie: 'COOKIE_1=abc.;COOKIE_2='
     });
     const next = jest.fn();
 
     authMiddleware(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Token malformed' });
-    expect(next).not.toHaveBeenCalled();
+    expect(res.errors).toEqual({
+      key: 'cookie',
+      message: 'Missing cookie values'
+    });
   });
 });
+
+// TODO: extractJWTFromCookies test

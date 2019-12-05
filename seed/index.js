@@ -3,7 +3,7 @@
 import faker from 'faker';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import config from '../config';
+import config from '../src/config';
 import User from '../src/models/User';
 import log from '../src/lib/logger';
 
@@ -30,8 +30,8 @@ async function seedUser() {
   }
 
   await User.create(users)
-    .then(users => log.log(`${users.length} users created`))
-    .catch(err => log.err(err))
+    .then((savedUsers) => log.log(`${savedUsers.length} users created`))
+    .catch((err) => log.err(err))
     .finally(() => mongoose.connection.close());
 }
 

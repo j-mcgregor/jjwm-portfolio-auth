@@ -93,8 +93,8 @@ describe('User Model Test', () => {
 
     userWithoutRequiredField
       .save()
-      .then(user => user)
-      .catch(err => {
+      .then((user) => user)
+      .catch((err) => {
         expect(err).toBeInstanceOf(mongoose.Error.ValidationError);
         expect(err.errors.email).toBeDefined();
       });

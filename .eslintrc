@@ -1,13 +1,11 @@
 {
+  "extends": "airbnb-base",
   "parser": "babel-eslint",
   "parserOptions": {
     "sourceType": "module",
     "ecmaVersion": 6
   },
-  "plugins": [
-    "babel",
-    "prettier"
-  ],
+  "plugins": ["babel", "prettier"],
   "env": {
     "browser": false,
     "node": true,
@@ -35,16 +33,10 @@
     "no-console": "error",
     // ES6 allows for comma on last property but makes code confusing
     // whether is end of object or not. So turning off so optional.
-    "comma-dangle": [
-      "error",
-      "never"
-    ],
+    "comma-dangle": ["error", "never"],
     // Allow for underscore in variable names, for private etc.
     "no-underscore-dangle": "off",
-    "linebreak-style": [
-      0,
-      "windows"
-    ],
+    "linebreak-style": [0, "windows"],
     "max-len": [
       "error",
       {
@@ -55,13 +47,11 @@
     "import/no-extraneous-dependencies": [
       "off",
       {
-        "devDependencies": [
-          "**/*.spec.js"
-        ],
-        "packageDir": [
-          "./tools"
-        ]
+        "devDependencies": ["**/*.spec.js"],
+        "packageDir": ["./tools"]
       }
-    ]
+    ],
+    "no-throw-literal": "off",
+    "no-plusplus": "off"
   }
 }
