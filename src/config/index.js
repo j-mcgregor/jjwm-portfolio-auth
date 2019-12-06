@@ -20,7 +20,10 @@ module.exports = {
     useUnifiedTopology: true
   },
   corsOptions: {
-    origin: '*',
+    origin:
+      process.env.NODE_ENV !== 'production'
+        ? 'http://localhost:3000'
+        : 'https://jjwm-portfolio-auth.herokuapp.com',
     credentials: true,
     methods: 'GET,PUT,POST,DELETE,OPTIONS',
     headers:

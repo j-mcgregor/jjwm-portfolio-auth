@@ -65,10 +65,10 @@ router.post('/login', async (req, res, next) => {
       const resUser = { email: user.email, id: user._id };
       res.status(200).json({ user: resUser, token, auth: true });
     } catch (e) {
-      sendError(next, res, e.key, e.message, 400);
+      sendError(next, res, e, 500);
     }
   } catch (e) {
-    sendError(next, res, e.key, e.message, 400);
+    sendError(next, res, e, 500);
   }
 });
 
@@ -131,13 +131,13 @@ router.post('/register', async (req, res, next) => {
 
         return res.status(200).json({ message: 'Success' });
       } catch (e) {
-        sendError(next, res, e.key, e.message, 500);
+        sendError(next, res, e, 500);
       }
     } catch (e) {
-      sendError(next, res, e.key, e.message, 500);
+      sendError(next, res, e, 500);
     }
   } catch (e) {
-    sendError(next, res, e.key, e.message, 400);
+    sendError(next, res, e, 400);
   }
 });
 
@@ -273,13 +273,13 @@ router.post('/changePassword', authMiddleware, async (req, res, next) => {
 
         return res.status(200).json({ message: 'Success' });
       } catch (e) {
-        sendError(next, res, e.key, e.message, 500);
+        sendError(next, res, e, 500);
       }
     } catch (e) {
-      sendError(next, res, e.key, e.message, 400);
+      sendError(next, res, e, 400);
     }
   } catch (e) {
-    sendError(next, res, e.key, e.message, 400);
+    sendError(next, res, e, 400);
   }
 });
 

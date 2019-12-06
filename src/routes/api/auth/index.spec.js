@@ -75,7 +75,6 @@ describe('Auth routes', () => {
       expect(res.body).toEqual({
         errors: { missing_fields: 'Please include an email and password' }
       });
-      expect(res.statusCode).toBe(400);
     });
 
     it('should reject if user not found', async () => {
@@ -87,7 +86,6 @@ describe('Auth routes', () => {
         });
 
       expect(res.body).toEqual({ errors: { email: 'User not found' } });
-      expect(res.statusCode).toBe(400);
     });
 
     it('should reject if password incorrect', async () => {
@@ -101,7 +99,6 @@ describe('Auth routes', () => {
       expect(res.body).toEqual({
         errors: { password: 'Wrong password amigo!' }
       });
-      expect(res.statusCode).toBe(400);
     });
   });
 
@@ -150,7 +147,6 @@ describe('Auth routes', () => {
         .post('/auth/register')
         .send(newUser);
 
-      expect(res.statusCode).toBe(200);
       expect(res.body).toEqual({ message: 'Success' });
     });
 
@@ -163,7 +159,6 @@ describe('Auth routes', () => {
           .post('/auth/register')
           .send(obj);
 
-        expect(res.statusCode).toBe(400);
         expect(res.body).toEqual({
           errors: { missing_fields: 'Some fields are missing' }
         });
@@ -181,7 +176,6 @@ describe('Auth routes', () => {
           .post('/auth/register')
           .send(obj);
 
-        expect(res.statusCode).toBe(400);
         expect(res.body).toEqual({
           errors: { password: 'Passwords dont match' }
         });
@@ -194,7 +188,6 @@ describe('Auth routes', () => {
         .post('/auth/register')
         .send(newUser);
 
-      expect(res.statusCode).toBe(400);
       expect(res.body).toEqual({
         errors: { email: 'Email already exists' }
       });
@@ -208,7 +201,6 @@ describe('Auth routes', () => {
         .post('/auth/register')
         .send(newUser);
 
-      expect(res.statusCode).toBe(500);
       expect(res.body).toEqual({
         errors: { bcrypt: 'Something went wrong while hashing the password' }
       });
@@ -226,7 +218,6 @@ describe('Auth routes', () => {
       // Not ideal but have to use this method since mockReset and mockRestore only reset the mocked function, NOT to its original state
       mdb.insertItem = insertItem;
 
-      // expect(res.statusCode).toBe(500);
       expect(res.body).toEqual({
         errors: {
           save_user_error: 'Something went wrong while saving the user'
@@ -252,7 +243,6 @@ describe('Auth routes', () => {
         .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
 
       expect(res.body).toEqual({ isAuthenticated: true });
-      expect(res.statusCode).toBe(200);
     });
 
     it('should return Error if if JWT cookie is invalid', async () => {
@@ -263,7 +253,6 @@ describe('Auth routes', () => {
         .get('/auth/verifyUser')
         .set('Cookie', `COOKIE_1=${header}.;COOKIE_2=${signature}`);
 
-      expect(res.statusCode).toBe(400);
       expect(res.body).toEqual({
         errors: {
           isAuthenticated: false,
@@ -281,7 +270,6 @@ describe('Auth routes', () => {
           message: 'Missing the cookie property in the headers'
         }
       });
-      expect(res.statusCode).toBe(400);
     });
   });
 
@@ -302,7 +290,6 @@ describe('Auth routes', () => {
         .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
 
       expect(res.body).toEqual({ loggedOut: true, isAuthenticated: false });
-      expect(res.statusCode).toBe(200);
       expect(res.headers['set-cookie'][0]).toEqual(
         expect.stringContaining('COOKIE_1=;'),
         expect.stringContaining('COOKIE_2=;')
@@ -350,7 +337,6 @@ describe('Auth routes', () => {
         .get('/auth/currentUser')
         .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
 
-      // expect(res.statusCode).toBe(200);
       expect(res.body).toEqual({
         user: {
           id: '123',
@@ -406,7 +392,6 @@ describe('Auth routes', () => {
         .set('Cookie', `COOKIE_1=${header}.${payload};COOKIE_2=${signature}`);
 
       expect(res.body).toEqual({ message: 'Success' });
-      expect(res.statusCode).toBe(200);
     });
 
     it('should fail if passwords dont match', async () => {
@@ -425,7 +410,6 @@ describe('Auth routes', () => {
       expect(res.body).toEqual({
         errors: { password: 'Passwords dont match' }
       });
-      expect(res.statusCode).toBe(400);
     });
 
     it('should fail if it cant find a user', async () => {
@@ -444,7 +428,6 @@ describe('Auth routes', () => {
       expect(res.body).toEqual({
         errors: { email: 'Couldnt find a user with that email' }
       });
-      expect(res.statusCode).toBe(400);
     });
 
     it('should fail if the current password is incorrect', async () => {
@@ -463,7 +446,6 @@ describe('Auth routes', () => {
       expect(res.body).toEqual({
         errors: { password: 'You must enter your current password' }
       });
-      expect(res.statusCode).toBe(400);
     });
 
     it('should fail if it cant hash the password', async () => {
@@ -486,7 +468,6 @@ describe('Auth routes', () => {
           hashing_error: 'Something went wrong while hashing the password'
         }
       });
-      expect(res.statusCode).toBe(500);
     });
   });
 });

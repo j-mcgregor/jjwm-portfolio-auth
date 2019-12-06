@@ -1,4 +1,8 @@
-export default (next, res, key, message, status) => {
-  next(message);
-  res.status(status).json({ errors: { [key]: message } });
+/* eslint-disable consistent-return */
+export default (next, res, err, status) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.json({ errors: { [err.key]: err.message } });
+  res.status(status);
 };
