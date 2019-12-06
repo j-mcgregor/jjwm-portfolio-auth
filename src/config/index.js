@@ -23,7 +23,7 @@ module.exports = {
     origin:
       process.env.NODE_ENV !== 'production'
         ? 'http://localhost:3000'
-        : 'https://jjwm-portfolio-auth.herokuapp.com',
+        : 'https://jjwm-portfolio-client.herokuapp.com',
     credentials: true,
     methods: 'GET,PUT,POST,DELETE,OPTIONS',
     headers:
